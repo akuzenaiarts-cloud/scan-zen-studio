@@ -72,7 +72,7 @@ export default function EditorChoice() {
 
           {/* Right - Floating Cover */}
           <div className="hidden md:block relative md:w-[45%] shrink-0">
-            <div className="absolute -top-10 right-0 bottom-0 left-0 rounded-2xl overflow-hidden shadow-2xl border border-border/30">
+            <div className="absolute -top-10 right-0 -bottom-0 left-0 rounded-2xl overflow-hidden shadow-2xl border border-border/30" style={{ bottom: '40px' }}>
               <img
                 src={manga.cover}
                 alt={manga.title}
