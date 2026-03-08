@@ -190,36 +190,6 @@ export default function ChapterReader() {
 
             {/* After-reader section */}
             <div className="max-w-5xl mx-auto mt-8 space-y-6">
-              {/* Next Chapter / Series card */}
-              <div className="text-center space-y-3 pt-4">
-                <h3 className="text-lg font-bold">{hasNext ? 'Next Chapter' : 'Series'}</h3>
-                {hasNext ? (
-                  <button
-                    onClick={() => navigate(`/manga/${slug}/chapter/${chapterNum + 1}`)}
-                    className="inline-flex items-center gap-3 p-3 pr-6 rounded-xl bg-secondary/60 border border-border/30 hover:bg-secondary transition-colors mx-auto"
-                  >
-                    <img src={manga.cover} alt="" className="w-16 h-[80px] object-cover rounded-lg" />
-                    <div className="text-left">
-                      <p className="text-sm font-semibold">Chapter {chapterNum + 1}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {manga.chapters.find(c => c.number === chapterNum + 1)?.date || ''}
-                      </p>
-                    </div>
-                  </button>
-                ) : (
-                  <Link
-                    to={`/manga/${manga.slug}`}
-                    className="inline-flex items-center gap-3 p-3 pr-6 rounded-xl bg-secondary/60 border border-border/30 hover:bg-secondary transition-colors mx-auto"
-                  >
-                    <img src={manga.cover} alt="" className="w-16 h-[80px] object-cover rounded-lg" />
-                    <div className="text-left">
-                      <p className="text-sm font-semibold">{manga.title}</p>
-                      <p className="text-xs text-muted-foreground">View Series Page</p>
-                    </div>
-                  </Link>
-                )}
-              </div>
-
               {/* Reactions */}
               <div className="text-center space-y-4 py-4">
                 <div>
