@@ -215,6 +215,7 @@ export const mockManga: Manga[] = [
     id: '7',
     slug: 'dragon-slayers',
     title: 'Dragon Slayers',
+    altTitles: ['屠龙勇士', 'Dragon Hunters'],
     cover: '/manga/cover7.jpg',
     banner: '/manga/cover7.jpg',
     description: 'Four heroes from different lands unite to face the ancient dragon that threatens to destroy the world. An epic fantasy tale of courage, sacrifice, and the bonds forged in battle.',
