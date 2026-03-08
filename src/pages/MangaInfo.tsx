@@ -53,7 +53,7 @@ export default function MangaInfo() {
         {/* Main Content */}
         <div className="flex-1 min-w-0 space-y-3">
           {/* Header: Cover + Info */}
-          <div className="flex flex-col sm:flex-row gap-6">
+          <div className="flex flex-col sm:flex-row gap-5">
             <img
               src={manga.cover}
               alt={manga.title}
