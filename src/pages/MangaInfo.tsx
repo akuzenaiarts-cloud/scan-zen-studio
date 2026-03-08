@@ -6,6 +6,13 @@ import { getMangaBySlug, getTrendingManga } from '@/data/mockManga';
 import TypeBadge from '@/components/TypeBadge';
 import CommentSection from '@/components/CommentSection';
 
+const GENRE_EMOJI: Record<string, string> = {
+  Action: '⚔️', Fantasy: '🔮', Adventure: '🧭', Drama: '🎲', Romance: '❤️',
+  Comedy: '😂', Horror: '👻', Thriller: '🔪', Mystery: '🕵️', 'Sci-Fi': '🚀',
+  'Slice of Life': '🌸', Magic: '✨', 'Martial Arts': '🥊', Sports: '🏆',
+  Isekai: '🌀', Cyberpunk: '🤖',
+};
+
 const REACTIONS = [
   { emoji: '👍', label: 'Like' },
   { emoji: '🤣', label: 'Funny' },
@@ -44,16 +51,16 @@ export default function MangaInfo() {
     <div className="w-full px-6 sm:px-10 lg:px-16 xl:px-24 py-6">
       <div className="flex flex-col xl:flex-row gap-6">
         {/* Main Content */}
-        <div className="flex-1 min-w-0 space-y-5">
+        <div className="flex-1 min-w-0 space-y-3">
           {/* Header: Cover + Info */}
-          <div className="flex flex-col sm:flex-row gap-6">
+          <div className="flex flex-col sm:flex-row gap-5">
             <img
               src={manga.cover}
               alt={manga.title}
               className="w-64 h-[360px] object-cover rounded-xl shrink-0 mx-auto sm:mx-0 shadow-lg"
             />
             <div className="flex-1 space-y-3.5">
-              <h1 className="text-5xl sm:text-6xl font-bold leading-tight">{manga.title}</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold leading-tight">{manga.title}</h1>
 
               <div>
                 <p className="text-base text-muted-foreground font-medium italic">Alternative titles</p>
@@ -68,33 +75,33 @@ export default function MangaInfo() {
                 <span className="text-sm text-muted-foreground flex items-center gap-1">⏱ {manga.chapters[0]?.date || '4 days ago'}</span>
                 {manga.genres.slice(0, 4).map(g => (
                   <span key={g} className="text-sm text-muted-foreground flex items-center gap-1">
-                    <span className="text-sm">📖</span> {g}
+                    <span className="text-sm">{GENRE_EMOJI[g] || '📖'}</span> {g}
                   </span>
                 ))}
               </div>
 
               {/* Description */}
-              <div className="bg-secondary/60 rounded-lg p-6 text-base leading-relaxed text-muted-foreground border border-border/50">
+              <div className="bg-secondary/60 rounded-lg p-4 text-sm leading-relaxed text-muted-foreground border border-border/50">
                 {manga.description}
               </div>
 
               {/* Action Buttons */}
               <div className="flex items-center gap-0 mt-2">
                 <Link to={`/manga/${manga.slug}/chapter/1`} className="flex-1">
-                  <Button variant="secondary" className="w-full gap-2 rounded-none rounded-l-lg border border-border/50 h-14 text-base font-medium">
-                    <Play className="w-5 h-5" /> Start Reading
+                  <Button variant="secondary" className="w-full gap-2 rounded-none rounded-l-lg border border-border/50 h-12 text-sm font-medium">
+                    <Play className="w-4 h-4" /> Start Reading
                   </Button>
                 </Link>
                 <Link to={`/manga/${manga.slug}/chapter/${maxChapter}`} className="flex-1">
-                  <Button variant="secondary" className="w-full gap-2 rounded-none border-y border-r border-border/50 h-14 text-base font-medium">
-                    <Play className="w-5 h-5" /> New Chapter
+                  <Button variant="secondary" className="w-full gap-2 rounded-none border-y border-r border-border/50 h-12 text-sm font-medium">
+                    <Play className="w-4 h-4" /> New Chapter
                   </Button>
                 </Link>
-                <Button variant="secondary" className="flex-1 gap-2 rounded-none border-y border-r border-border/50 h-14 text-base font-medium">
-                  <Plus className="w-5 h-5" /> Add to Library
+                <Button variant="secondary" className="flex-1 gap-2 rounded-none border-y border-r border-border/50 h-12 text-sm font-medium">
+                  <Plus className="w-4 h-4" /> Add to Library
                 </Button>
-                <Button variant="secondary" className="rounded-none rounded-r-lg border-y border-r border-border/50 px-5 h-14">
-                  <Bell className="w-5 h-5" />
+                <Button variant="secondary" className="rounded-none rounded-r-lg border-y border-r border-border/50 px-4 h-12">
+                  <Bell className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -107,7 +114,7 @@ export default function MangaInfo() {
                 <p className="text-base font-semibold">Share Kayn Scan</p>
                 <p className="text-sm text-muted-foreground">to your friends</p>
               </div>
-              <Button size="icon" className="rounded-full bg-primary h-11 w-11 shadow-md">
+              <Button size="icon" className="rounded-full bg-teal-500 hover:bg-teal-600 h-11 w-11 shadow-md">
                 <Share2 className="w-5 h-5" />
               </Button>
             </div>
@@ -127,6 +134,7 @@ export default function MangaInfo() {
                   <p className="text-xs text-muted-foreground">to explore more</p>
                 </div>
                 <Button size="sm" className="text-sm rounded-lg gap-1.5 h-9 px-4 bg-[#5865F2] hover:bg-[#4752C4]">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
                   Discord
                 </Button>
               </div>
@@ -227,7 +235,7 @@ export default function MangaInfo() {
                 <div className="flex items-center gap-1.5 mt-1">
                   <TypeBadge type={m.type} />
                   {m.status === 'Completed' && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-600 text-white font-medium">Completed</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-600 text-white font-medium">Completed</span>
                   )}
                 </div>
               </div>
