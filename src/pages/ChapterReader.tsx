@@ -24,6 +24,10 @@ export default function ChapterReader() {
     like: 0, funny: 0, love: 0, surprised: 0, angry: 0, sad: 0,
   });
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [chapterNum]);
+
   if (!manga) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
