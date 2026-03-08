@@ -1,21 +1,27 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, LayoutGrid, LogIn, LogOut, User, ClipboardList, ArrowLeft, BookOpen } from 'lucide-react';
+import { Search, Menu, X, LayoutGrid, LogIn, LogOut, User, ClipboardList, ArrowLeft, BookOpen, Bell, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import SearchModal from './SearchModal';
+
+const NAV_LINKS = [
+  { path: '/latest', label: 'Latest', icon: ClipboardList },
+  { path: '/series', label: 'Series', icon: LayoutGrid },
+  { path: '/library', label: 'Library', icon: BookOpen },
+];
 
 export default function Navbar() {
   const { isAuthenticated, user, logout, setShowLoginModal } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
 
   const isActive = (path: string) => location.pathname === path;
   const isSubPage = location.pathname.startsWith('/manga/');
 
-  // Extract slug from path for chapter pages
   const pathParts = location.pathname.split('/');
   const isChapterPage = pathParts.length >= 5 && pathParts[3] === 'chapter';
   const mangaSlug = pathParts[2] || '';
@@ -34,117 +40,150 @@ export default function Navbar() {
         <div className="w-full px-6 sm:px-10 lg:px-16 xl:px-24 flex h-20 items-center justify-between">
           {/* Logo */}
           {isSubPage ? (
-            <button onClick={handleBack} className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-muted/80 flex items-center justify-center">
-                <ArrowLeft className="w-5 h-5 text-foreground" />
-              </div>
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-3 group"
+            >
+              <ArrowLeft className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
               <span className="font-bold text-xl text-foreground tracking-tight">Kayn Scan</span>
             </button>
           ) : (
-            <Link to="/" className="flex items-center gap-3" onClick={() => setMobileOpen(false)}>
-              <div className="w-10 h-10 rounded-full bg-muted/80 flex items-center justify-center overflow-hidden">
-                <span className="text-foreground font-bold text-base">K</span>
+            <Link to="/" className="flex items-center gap-3 group" onClick={() => setMobileOpen(false)}>
+              <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center overflow-hidden group-hover:bg-primary/30 transition-colors duration-200">
+                <span className="text-primary font-bold text-base">K</span>
               </div>
               <span className="font-bold text-xl text-foreground tracking-tight">Kayn Scan</span>
             </Link>
           )}
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
+            {/* Search */}
             <Button
               variant="ghost"
-              className="rounded-full gap-2.5 px-6 h-12 bg-muted/80 hover:bg-muted text-base font-semibold"
+              className="rounded-full gap-2 px-5 h-11 bg-muted/60 hover:bg-muted text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
               onClick={() => setSearchOpen(true)}
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-4 h-4" />
               Search
             </Button>
 
-            <Link to="/latest">
-              <Button
-                variant="ghost"
-                className={`rounded-full px-5 h-12 bg-muted/80 hover:bg-muted ${isActive('/latest') ? 'bg-muted' : ''}`}
-              >
-                <ClipboardList className="w-5 h-5" />
-              </Button>
-            </Link>
+            {/* Nav links */}
+            {NAV_LINKS.map(({ path, label, icon: Icon }) => (
+              <Link key={path} to={path}>
+                <Button
+                  variant="ghost"
+                  className={`rounded-full gap-2 px-5 h-11 text-sm font-medium transition-all duration-200 hover:scale-[1.02] ${
+                    isActive(path)
+                      ? 'bg-primary/15 text-primary hover:bg-primary/20 ring-1 ring-primary/30'
+                      : 'bg-muted/60 hover:bg-muted'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </Button>
+              </Link>
+            ))}
 
-            <Link to="/series">
-              <Button
-                variant="ghost"
-                className={`rounded-full gap-2.5 px-6 h-12 bg-muted/80 hover:bg-muted text-base font-semibold ${isActive('/series') ? 'bg-muted' : ''}`}
-              >
-                <LayoutGrid className="w-5 h-5" />
-                Series
-              </Button>
-            </Link>
+            {/* Divider */}
+            <div className="w-px h-6 bg-border/60 mx-1" />
 
-            <Link to="/library">
-              <Button
-                variant="ghost"
-                className={`rounded-full gap-2.5 px-6 h-12 bg-muted/80 hover:bg-muted text-base font-semibold ${isActive('/library') ? 'bg-muted' : ''}`}
-              >
-                <BookOpen className="w-5 h-5" />
-                Library
-              </Button>
-            </Link>
+            {/* Notification bell */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted transition-all duration-200 hover:scale-[1.05] relative"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
+            </Button>
 
+            {/* Theme toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted transition-all duration-200 hover:scale-[1.05]"
+              onClick={() => setDarkMode(!darkMode)}
+            >
+              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+
+            {/* Auth */}
             {isAuthenticated ? (
-              <div className="flex items-center gap-3 ml-1">
-                <div className="flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-muted/80">
-                  <User className="w-5 h-5 text-primary" />
-                  <span className="text-base font-semibold">{user?.name}</span>
+              <div className="flex items-center gap-2 ml-1">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/60 border border-border/40">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                    <User className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium">{user?.name}</span>
                 </div>
-                <Button variant="ghost" className="rounded-full h-12 px-5 bg-muted/80 hover:bg-muted" onClick={logout}>
-                  <LogOut className="w-5 h-5" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted transition-all duration-200 hover:scale-[1.05]"
+                  onClick={logout}
+                >
+                  <LogOut className="w-4 h-4" />
                 </Button>
               </div>
             ) : (
               <Button
                 variant="ghost"
-                className="rounded-full gap-2.5 px-6 h-12 bg-muted/80 hover:bg-muted text-base font-semibold ml-1"
+                className="rounded-full gap-2 px-5 h-11 bg-primary/15 hover:bg-primary/25 text-primary text-sm font-medium transition-all duration-200 hover:scale-[1.02] ml-1"
                 onClick={() => setShowLoginModal(true)}
               >
-                <LogIn className="w-5 h-5" />
+                <LogIn className="w-4 h-4" />
                 Sign in
               </Button>
             )}
           </div>
 
           {/* Mobile toggle */}
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+          <Button variant="ghost" size="icon" className="md:hidden rounded-full h-11 w-11 bg-muted/60 hover:bg-muted" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
         </div>
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-border/30 bg-secondary/90 backdrop-blur-xl animate-fade-up">
-            <div className="px-6 sm:px-10 lg:px-16 xl:px-24 py-4 flex flex-col gap-2">
-              <Button variant="ghost" className="w-full justify-start gap-2 rounded-full bg-muted/80 hover:bg-muted" onClick={() => { setSearchOpen(true); setMobileOpen(false); }}>
+          <div className="md:hidden border-t border-border/30 bg-card/95 backdrop-blur-xl">
+            <div className="px-6 sm:px-10 py-4 flex flex-col gap-1.5">
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-2.5 rounded-xl h-12 bg-muted/40 hover:bg-muted text-sm font-medium"
+                onClick={() => { setSearchOpen(true); setMobileOpen(false); }}
+              >
                 <Search className="w-4 h-4" /> Search
               </Button>
-              <Link to="/latest" onClick={() => setMobileOpen(false)}>
-                <Button variant="ghost" className={`w-full justify-start gap-2 rounded-full ${isActive('/latest') ? 'bg-muted' : 'bg-muted/80 hover:bg-muted'}`}>
-                  <ClipboardList className="w-4 h-4" /> Latest
-                </Button>
-              </Link>
-              <Link to="/series" onClick={() => setMobileOpen(false)}>
-                <Button variant="ghost" className={`w-full justify-start gap-2 rounded-full ${isActive('/series') ? 'bg-muted' : 'bg-muted/80 hover:bg-muted'}`}>
-                  <LayoutGrid className="w-4 h-4" /> Series
-                </Button>
-              </Link>
-              <Link to="/library" onClick={() => setMobileOpen(false)}>
-                <Button variant="ghost" className={`w-full justify-start gap-2 rounded-full ${isActive('/library') ? 'bg-muted' : 'bg-muted/80 hover:bg-muted'}`}>
-                  <BookOpen className="w-4 h-4" /> Library
-                </Button>
-              </Link>
+              {NAV_LINKS.map(({ path, label, icon: Icon }) => (
+                <Link key={path} to={path} onClick={() => setMobileOpen(false)}>
+                  <Button
+                    variant="ghost"
+                    className={`w-full justify-start gap-2.5 rounded-xl h-12 text-sm font-medium ${
+                      isActive(path)
+                        ? 'bg-primary/15 text-primary'
+                        : 'bg-muted/40 hover:bg-muted'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" /> {label}
+                  </Button>
+                </Link>
+              ))}
+              <div className="h-px bg-border/40 my-1" />
               {isAuthenticated ? (
-                <Button variant="ghost" className="w-full justify-start gap-2 rounded-full bg-muted/80 hover:bg-muted" onClick={() => { logout(); setMobileOpen(false); }}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2.5 rounded-xl h-12 bg-muted/40 hover:bg-muted text-sm font-medium"
+                  onClick={() => { logout(); setMobileOpen(false); }}
+                >
                   <LogOut className="w-4 h-4" /> Sign Out
                 </Button>
               ) : (
-                <Button variant="ghost" className="w-full justify-start gap-2 rounded-full bg-muted/80 hover:bg-muted" onClick={() => { setShowLoginModal(true); setMobileOpen(false); }}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2.5 rounded-xl h-12 bg-primary/15 text-primary text-sm font-medium"
+                  onClick={() => { setShowLoginModal(true); setMobileOpen(false); }}
+                >
                   <LogIn className="w-4 h-4" /> Sign in
                 </Button>
               )}
