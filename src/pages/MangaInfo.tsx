@@ -124,7 +124,7 @@ export default function MangaInfo() {
                 <Share2 className="w-5 h-5" />
               </Button>
             </div>
-            <div className="flex gap-2.5">
+            <div className="flex flex-wrap gap-2.5">
               <div className="flex-1 flex items-center justify-between p-4 rounded-xl bg-secondary/60 border border-border/50">
                 <div>
                   <p className="text-sm font-semibold">Facing an Issue?</p>
