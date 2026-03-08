@@ -41,16 +41,16 @@ export default function MangaInfo() {
   const maxChapter = manga.chapters.length > 0 ? Math.max(...manga.chapters.map(c => c.number)) : 0;
 
   return (
-    <div className="container py-8">
-      <div className="flex flex-col lg:flex-row gap-8">
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Main Content */}
-        <div className="flex-1 min-w-0 space-y-6">
+        <div className="flex-1 min-w-0 space-y-5">
           {/* Header: Cover + Info */}
-          <div className="flex flex-col sm:flex-row gap-6">
+          <div className="flex flex-col sm:flex-row gap-5">
             <img
               src={manga.cover}
               alt={manga.title}
-              className="w-44 h-[260px] object-cover rounded-xl shrink-0 mx-auto sm:mx-0 shadow-lg"
+              className="w-48 h-[280px] object-cover rounded-xl shrink-0 mx-auto sm:mx-0 shadow-lg"
             />
             <div className="flex-1 space-y-3">
               <h1 className="text-2xl sm:text-3xl font-bold leading-tight">{manga.title}</h1>
