@@ -112,7 +112,7 @@ export default function Navbar() {
               </Link>
               <Link to="/series" onClick={() => setMobileOpen(false)}>
                 <Button variant={isActive('/series') ? 'default' : 'secondary'} className="w-full justify-start gap-2 rounded-full">
-                  <BookOpen className="w-4 h-4" /> Series
+                  <LayoutGrid className="w-4 h-4" /> Series
                 </Button>
               </Link>
               <Link to="/library" onClick={() => setMobileOpen(false)}>
