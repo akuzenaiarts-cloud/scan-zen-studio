@@ -146,7 +146,7 @@ export default function ChapterReader() {
               {Object.values(reactionCounts).reduce((a, b) => a + b, 0)} Reactions
             </p>
           </div>
-          <div className="flex justify-center gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 max-w-lg sm:max-w-2xl mx-auto">
             {[
               { key: 'like', emoji: '👍', label: 'Like' },
               { key: 'funny', emoji: '🤣', label: 'Funny' },
@@ -169,7 +169,7 @@ export default function ChapterReader() {
                     setReactionCounts(prev => ({ ...prev, [r.key]: prev[r.key] + 1 }));
                   }
                 }}
-                className={`flex flex-col items-center gap-1 p-3 rounded-xl min-w-[72px] transition-colors ${
+                className={`flex flex-col items-center gap-1 p-3 rounded-xl w-full transition-colors ${
                   selectedReaction === r.key
                     ? 'bg-primary/20 border border-primary/50'
                     : 'bg-secondary/50 hover:bg-secondary/80'
