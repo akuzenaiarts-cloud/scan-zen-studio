@@ -72,6 +72,13 @@ export default function UserMenu() {
 
           {/* Menu links */}
           <div className="flex flex-col gap-1">
+            {isAdmin && (
+              <Link to="/admin" onClick={close}>
+                <Button variant="ghost" className="w-full justify-start gap-2.5 rounded-xl h-10 hover:bg-primary/10 text-primary text-sm font-medium">
+                  <LayoutDashboard className="w-4 h-4" /> Admin Panel
+                </Button>
+              </Link>
+            )}
             <Link to="/earn" onClick={close}>
               <Button variant="ghost" className="w-full justify-start gap-2.5 rounded-xl h-10 hover:bg-muted text-sm font-medium">
                 <Coins className="w-4 h-4" /> Earn Coins/Tickets
