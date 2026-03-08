@@ -6,6 +6,13 @@ import { getMangaBySlug, getTrendingManga } from '@/data/mockManga';
 import TypeBadge from '@/components/TypeBadge';
 import CommentSection from '@/components/CommentSection';
 
+const GENRE_EMOJI: Record<string, string> = {
+  Action: '⚔️', Fantasy: '🔮', Adventure: '🧭', Drama: '🎲', Romance: '❤️',
+  Comedy: '😂', Horror: '👻', Thriller: '🔪', Mystery: '🕵️', 'Sci-Fi': '🚀',
+  'Slice of Life': '🌸', Magic: '✨', 'Martial Arts': '🥊', Sports: '🏆',
+  Isekai: '🌀', Cyberpunk: '🤖',
+};
+
 const REACTIONS = [
   { emoji: '👍', label: 'Like' },
   { emoji: '🤣', label: 'Funny' },
