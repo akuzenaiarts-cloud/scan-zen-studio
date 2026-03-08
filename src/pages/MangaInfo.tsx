@@ -86,23 +86,23 @@ export default function MangaInfo() {
                 {manga.description}
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3">
-                <Link to={`/manga/${manga.slug}/chapter/1`}>
-                  <Button size="sm" variant="secondary" className="gap-2 rounded-lg border border-border/50 px-5 h-9">
+              {/* Action Buttons - wider like KaynScan */}
+              <div className="flex items-center gap-0 mt-1">
+                <Link to={`/manga/${manga.slug}/chapter/1`} className="flex-1">
+                  <Button size="sm" variant="secondary" className="w-full gap-2 rounded-none rounded-l-lg border border-border/50 h-10 text-sm">
                     <Play className="w-3.5 h-3.5" /> Start Reading
                   </Button>
                 </Link>
-                <Link to={`/manga/${manga.slug}/chapter/${maxChapter}`}>
-                  <Button size="sm" variant="secondary" className="gap-2 rounded-lg border border-border/50 px-5 h-9">
+                <Link to={`/manga/${manga.slug}/chapter/${maxChapter}`} className="flex-1">
+                  <Button size="sm" variant="secondary" className="w-full gap-2 rounded-none border-y border-r border-border/50 h-10 text-sm">
                     <Play className="w-3.5 h-3.5" /> New Chapter
                   </Button>
                 </Link>
-                <Button size="sm" variant="secondary" className="gap-2 rounded-lg border border-border/50 px-5 h-9">
+                <Button size="sm" variant="secondary" className="flex-1 gap-2 rounded-none border-y border-r border-border/50 h-10 text-sm">
                   <Plus className="w-3.5 h-3.5" /> Add to Library
                 </Button>
-                <Button size="sm" variant="secondary" className="rounded-lg border border-border/50 px-3 h-9">
-                  <Bell className="w-3.5 h-3.5" />
+                <Button size="sm" variant="secondary" className="rounded-none rounded-r-lg border-y border-r border-border/50 px-4 h-10">
+                  <Bell className="w-4 h-4" />
                 </Button>
               </div>
             </div>
