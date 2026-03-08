@@ -23,25 +23,27 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <ThemeProvider>
-        <Sonner />
-        <BrowserRouter>
-          <div className="min-h-screen flex flex-col">
-            <Navbar />
-            <main className="flex-1">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/manga/:slug" element={<MangaInfo />} />
-                <Route path="/manga/:slug/chapter/:chapterId" element={<ChapterReader />} />
-                <Route path="/latest" element={<Latest />} />
-                <Route path="/series" element={<Series />} />
-                <Route path="/library" element={<Library />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-          <LoginModal />
-        </BrowserRouter>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <div className="min-h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-1">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/manga/:slug" element={<MangaInfo />} />
+                  <Route path="/manga/:slug/chapter/:chapterId" element={<ChapterReader />} />
+                  <Route path="/latest" element={<Latest />} />
+                  <Route path="/series" element={<Series />} />
+                  <Route path="/library" element={<Library />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+            <LoginModal />
+          </BrowserRouter>
+        </ThemeProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
