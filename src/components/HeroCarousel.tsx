@@ -59,7 +59,7 @@ export default function HeroCarousel() {
           {items.map(manga => (
             <div
               key={manga.id}
-              className="flex-[0_0_85%] sm:flex-[0_0_45%] lg:flex-[0_0_33.333%] min-w-0 px-2"
+              className="flex-[0_0_85%] sm:flex-[0_0_40%] lg:flex-[0_0_28%] min-w-0 px-2"
             >
               <Link
                 to={`/manga/${manga.slug}`}
@@ -102,8 +102,8 @@ export default function HeroCarousel() {
       </div>
 
       {/* Edge fading overlays */}
-      <div className="absolute inset-y-0 left-0 w-16 sm:w-20 lg:w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-      <div className="absolute inset-y-0 right-0 w-16 sm:w-20 lg:w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+      <div className="absolute inset-y-0 left-0 w-12 sm:w-16 lg:w-16 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+      <div className="absolute inset-y-0 right-0 w-12 sm:w-16 lg:w-16 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
 
       {/* Navigation Arrows */}
       <button
