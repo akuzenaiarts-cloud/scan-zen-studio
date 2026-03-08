@@ -29,17 +29,17 @@ export default function EditorChoice() {
       <div className="relative rounded-xl overflow-hidden bg-card border border-border/40">
         <div className="flex flex-col md:flex-row">
           {/* Left - Info */}
-          <div className="flex-1 p-5 md:p-6 flex flex-col justify-center">
-            <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-2">{manga.title}</h3>
-            <p className="text-base text-muted-foreground line-clamp-3 mb-4 max-w-lg">{manga.description}</p>
+          <div className="flex-1 p-4 md:p-5 flex flex-col justify-center">
+            <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-1.5">{manga.title}</h3>
+            <p className="text-base text-muted-foreground line-clamp-3 mb-3 max-w-lg">{manga.description}</p>
 
             {/* Small covers row */}
-            <div className="flex gap-3 mb-5">
+            <div className="flex gap-3 mb-3">
               {featured.map((m, i) => (
                 <button
                   key={m.id}
                   onClick={() => setCurrent(i)}
-                  className={`w-20 h-28 rounded-lg overflow-hidden border-2 transition-all ${
+                  className={`w-24 h-36 rounded-lg overflow-hidden border-2 transition-all ${
                     i === current ? 'border-primary scale-105' : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
