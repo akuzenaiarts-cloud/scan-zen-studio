@@ -241,6 +241,7 @@ export const mockManga: Manga[] = [
     id: '8',
     slug: 'realm-walker',
     title: 'Realm Walker',
+    altTitles: ['차원 보행자', 'Dimension Walker'],
     cover: '/manga/cover8.jpg',
     banner: '/manga/cover8.jpg',
     description: 'Summoned to another world through a mysterious portal, a young man discovers he has the unique ability to walk between realms. He must use this power to prevent a catastrophic collision of worlds.',
