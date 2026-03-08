@@ -198,7 +198,7 @@ export default function MangaInfo() {
               <p className="font-bold text-lg">What do you think?</p>
               <p className="text-sm text-muted-foreground">{Object.values(reactions).reduce((a, b) => a + b, 0)} Reactions</p>
             </div>
-            <div className="flex justify-center gap-8">
+            <div className="flex justify-center flex-wrap gap-x-8 gap-y-4">
               {REACTIONS.map(r => (
                 <button
                   key={r.label}
