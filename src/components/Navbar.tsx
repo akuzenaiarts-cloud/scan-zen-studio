@@ -138,10 +138,28 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile toggle */}
-          <Button variant="ghost" size="icon" className="md:hidden rounded-full h-11 w-11 bg-muted/60 hover:bg-muted" onClick={() => setMobileOpen(!mobileOpen)}>
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
+          {/* Mobile actions */}
+          <div className="flex items-center gap-1.5 md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted relative"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted"
+              onClick={() => setDarkMode(!darkMode)}
+            >
+              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted" onClick={() => setMobileOpen(!mobileOpen)}>
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
         </div>
 
       </nav>
