@@ -125,24 +125,24 @@ export default function ChapterReader() {
               <span className="text-sm">Chapters</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-[80vh] rounded-t-2xl p-0">
-            <SheetHeader className="p-4 pb-2 border-b border-border/50">
-              <div className="flex items-center justify-between">
+          <SheetContent side="bottom" className="h-[60vh] rounded-t-2xl p-0">
+            <SheetHeader className="px-4 pt-4 pb-3 border-b border-border/50">
+              <div className="flex items-center justify-between gap-3">
                 <SheetTitle className="text-base">
                   {manga.chapters.length} Chapters
                 </SheetTitle>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={() => setSortAsc(!sortAsc)}
-                  className="gap-1 text-xs"
+                  className="gap-1.5 text-xs rounded-full"
                 >
                   {sortAsc ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />}
                   {sortAsc ? 'Ascending' : 'Descending'}
                 </Button>
               </div>
             </SheetHeader>
-            <ScrollArea className="h-[calc(80vh-60px)]">
+            <ScrollArea className="h-[calc(60vh-60px)]">
               <div className="grid grid-cols-2 gap-2 p-4">
                 {sortedChapters.map(ch => (
                   <button
