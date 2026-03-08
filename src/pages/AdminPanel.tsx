@@ -50,6 +50,14 @@ export default function AdminPanel() {
   const [mangaSearch, setMangaSearch] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mangaFormOpen, setMangaFormOpen] = useState(false);
+  const [editingManga, setEditingManga] = useState<Manga | null>(null);
+  const [chapterManagerOpen, setChapterManagerOpen] = useState(false);
+  const [selectedManga, setSelectedManga] = useState<Manga | null>(null);
+  const [deleteMangaId, setDeleteMangaId] = useState<string | null>(null);
+
+  const { data: supabaseManga = [], isLoading: mangaLoading } = useAdminManga();
+  const deleteManga = useDeleteManga();
 
   useEffect(() => {
     if (!loading && !isAdmin) {
