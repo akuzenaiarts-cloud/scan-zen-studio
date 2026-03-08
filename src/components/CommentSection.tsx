@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function CommentSection({ comments, title = 'Comments' }: Props) {
-  const { isAuthenticated, user, setShowLoginModal } = useAuth();
+  const { isAuthenticated, user, profile, setShowLoginModal } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [localComments, setLocalComments] = useState(comments);
 
@@ -19,7 +19,7 @@ export default function CommentSection({ comments, title = 'Comments' }: Props) 
     if (!newComment.trim() || !user) return;
     setLocalComments(prev => [{
       id: Date.now(),
-      user: user.name,
+      user: profile?.display_name || 'User',
       avatar: '',
       text: newComment,
       date: 'Just now',
