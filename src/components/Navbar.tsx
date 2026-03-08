@@ -104,9 +104,9 @@ export default function Navbar() {
               variant="ghost"
               size="icon"
               className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted transition-all duration-200 hover:scale-[1.05]"
-              onClick={() => setDarkMode(!darkMode)}
+              onClick={toggleTheme}
             >
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
 
             {/* Auth */}
