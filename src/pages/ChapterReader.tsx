@@ -248,21 +248,14 @@ export default function ChapterReader() {
                   ))}
                 </div>
               </div>
+
+              {/* Comments */}
+              <div className="py-6">
+                <CommentSection comments={manga.comments} title="Chapter Comments" />
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Comments Sidebar - Desktop */}
-        <div className="hidden lg:block w-80 border-l border-border bg-secondary/30 shrink-0">
-          <div className="p-6 sticky top-16">
-            <CommentSection comments={manga.comments} title="Chapter Comments" />
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Comments */}
-      <div className="lg:hidden px-2 sm:px-4 pb-8">
-        <CommentSection comments={manga.comments} title="Chapter Comments" />
       </div>
 
       {/* Floating Options Button */}
