@@ -1,83 +1,159 @@
-import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn } from '@/lib/utils';
+import { ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
-// ─── Flickering Grid Canvas ─────────────────────────────────────────────────
+// ─── Color helpers (replaces color-bits) ────────────────────────────────────
 
-interface FlickeringGridProps {
+const getRGBA = (
+  cssColor: React.CSSProperties["color"],
+  fallback: string = "rgba(180, 180, 180)",
+): string => {
+  if (typeof window === "undefined") return fallback;
+  if (!cssColor) return fallback;
+
+  try {
+    if (typeof cssColor === "string" && cssColor.startsWith("var(")) {
+      const element = document.createElement("div");
+      element.style.color = cssColor;
+      document.body.appendChild(element);
+      const computedColor = window.getComputedStyle(element).color;
+      document.body.removeChild(element);
+      return computedColor;
+    }
+
+    const element = document.createElement("div");
+    element.style.color = cssColor as string;
+    document.body.appendChild(element);
+    const computedColor = window.getComputedStyle(element).color;
+    document.body.removeChild(element);
+    return computedColor;
+  } catch (e) {
+    console.error("Color parsing failed:", e);
+    return fallback;
+  }
+};
+
+const colorWithOpacity = (color: string, opacity: number): string => {
+  const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (m) return `rgba(${m[1]}, ${m[2]}, ${m[3]}, ${opacity})`;
+  return color;
+};
+
+// ─── FlickeringGrid with text mask ──────────────────────────────────────────
+
+interface FlickeringGridProps extends React.HTMLAttributes<HTMLDivElement> {
   squareSize?: number;
   gridGap?: number;
   flickerChance?: number;
   color?: string;
-  maxOpacity?: number;
+  width?: number;
+  height?: number;
   className?: string;
+  maxOpacity?: number;
+  text?: string;
+  textColor?: string;
+  fontSize?: number;
+  fontWeight?: number | string;
 }
 
-function resolveColor(cssColor: string): string {
-  if (typeof window === 'undefined') return '180, 180, 180';
-  const el = document.createElement('div');
-  el.style.color = cssColor;
-  document.body.appendChild(el);
-  const computed = getComputedStyle(el).color;
-  document.body.removeChild(el);
-  const m = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  return m ? `${m[1]}, ${m[2]}, ${m[3]}` : '180, 180, 180';
-}
-
-const FlickeringGridInner: React.FC<FlickeringGridProps> = ({
-  squareSize = 4,
-  gridGap = 6,
-  flickerChance = 0.3,
-  color = 'rgb(0, 0, 0)',
-  maxOpacity = 0.3,
+const FlickeringGrid: React.FC<FlickeringGridProps> = ({
+  squareSize = 3,
+  gridGap = 3,
+  flickerChance = 0.2,
+  color = "#B4B4B4",
+  width,
+  height,
   className,
+  maxOpacity = 0.15,
+  text = "",
+  fontSize = 140,
+  fontWeight = 600,
+  ...props
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isInView, setIsInView] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
-  const rgb = useMemo(() => resolveColor(color), [color]);
+  const memoizedColor = useMemo(() => getRGBA(color), [color]);
+
+  const drawGrid = useCallback(
+    (
+      ctx: CanvasRenderingContext2D,
+      width: number,
+      height: number,
+      cols: number,
+      rows: number,
+      squares: Float32Array,
+      dpr: number,
+    ) => {
+      ctx.clearRect(0, 0, width, height);
+
+      const maskCanvas = document.createElement("canvas");
+      maskCanvas.width = width;
+      maskCanvas.height = height;
+      const maskCtx = maskCanvas.getContext("2d", { willReadFrequently: true });
+      if (!maskCtx) return;
+
+      if (text) {
+        maskCtx.save();
+        maskCtx.scale(dpr, dpr);
+        maskCtx.fillStyle = "white";
+        maskCtx.font = `${fontWeight} ${fontSize}px "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        maskCtx.textAlign = "center";
+        maskCtx.textBaseline = "middle";
+        maskCtx.fillText(text, width / (2 * dpr), height / (2 * dpr));
+        maskCtx.restore();
+      }
+
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          const x = i * (squareSize + gridGap) * dpr;
+          const y = j * (squareSize + gridGap) * dpr;
+          const squareWidth = squareSize * dpr;
+          const squareHeight = squareSize * dpr;
+
+          const maskData = maskCtx.getImageData(x, y, squareWidth, squareHeight).data;
+          const hasText = maskData.some((value, index) => index % 4 === 0 && value > 0);
+
+          const opacity = squares[i * rows + j];
+          const finalOpacity = hasText ? Math.min(1, opacity * 3 + 0.4) : opacity;
+
+          ctx.fillStyle = colorWithOpacity(memoizedColor, finalOpacity);
+          ctx.fillRect(x, y, squareWidth, squareHeight);
+        }
+      }
+    },
+    [memoizedColor, squareSize, gridGap, text, fontSize, fontWeight],
+  );
 
   const setupCanvas = useCallback(
-    (canvas: HTMLCanvasElement, w: number, h: number) => {
+    (canvas: HTMLCanvasElement, width: number, height: number) => {
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
-      const cols = Math.ceil(w / (squareSize + gridGap));
-      const rows = Math.ceil(h / (squareSize + gridGap));
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      const cols = Math.ceil(width / (squareSize + gridGap));
+      const rows = Math.ceil(height / (squareSize + gridGap));
+
       const squares = new Float32Array(cols * rows);
-      for (let i = 0; i < squares.length; i++) squares[i] = Math.random() * maxOpacity;
+      for (let i = 0; i < squares.length; i++) {
+        squares[i] = Math.random() * maxOpacity;
+      }
+
       return { cols, rows, squares, dpr };
     },
     [squareSize, gridGap, maxOpacity],
   );
 
-  const drawGrid = useCallback(
-    (ctx: CanvasRenderingContext2D, cols: number, rows: number, squares: Float32Array, dpr: number) => {
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-      for (let i = 0; i < cols; i++) {
-        for (let j = 0; j < rows; j++) {
-          ctx.fillStyle = `rgba(${rgb}, ${squares[i * rows + j]})`;
-          ctx.fillRect(
-            i * (squareSize + gridGap) * dpr,
-            j * (squareSize + gridGap) * dpr,
-            squareSize * dpr,
-            squareSize * dpr,
-          );
-        }
-      }
-    },
-    [rgb, squareSize, gridGap],
-  );
-
   const updateSquares = useCallback(
-    (squares: Float32Array, total: number) => {
-      for (let i = 0; i < total; i++) {
-        if (Math.random() < flickerChance) squares[i] = Math.random() * maxOpacity;
+    (squares: Float32Array, deltaTime: number) => {
+      for (let i = 0; i < squares.length; i++) {
+        if (Math.random() < flickerChance * deltaTime) {
+          squares[i] = Math.random() * maxOpacity;
+        }
       }
     },
     [flickerChance, maxOpacity],
@@ -87,197 +163,189 @@ const FlickeringGridInner: React.FC<FlickeringGridProps> = ({
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
-    const ctx = canvas.getContext('2d');
+
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let raf: number;
-    let gp: ReturnType<typeof setupCanvas>;
+    let animationFrameId: number;
+    let gridParams: ReturnType<typeof setupCanvas>;
 
-    const resize = () => {
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      setCanvasSize({ width: w, height: h });
-      gp = setupCanvas(canvas, w, h);
+    const updateCanvasSize = () => {
+      const newWidth = width || container.clientWidth;
+      const newHeight = height || container.clientHeight;
+      setCanvasSize({ width: newWidth, height: newHeight });
+      gridParams = setupCanvas(canvas, newWidth, newHeight);
     };
 
-    resize();
+    updateCanvasSize();
 
-    const animate = () => {
-      if (isInView) {
-        updateSquares(gp.squares, gp.cols * gp.rows);
-        drawGrid(ctx, gp.cols, gp.rows, gp.squares, gp.dpr);
-      }
-      raf = requestAnimationFrame(animate);
+    let lastTime = 0;
+    const animate = (time: number) => {
+      if (!isInView) return;
+
+      const deltaTime = (time - lastTime) / 1000;
+      lastTime = time;
+
+      updateSquares(gridParams.squares, deltaTime);
+      drawGrid(
+        ctx,
+        canvas.width,
+        canvas.height,
+        gridParams.cols,
+        gridParams.rows,
+        gridParams.squares,
+        gridParams.dpr,
+      );
+      animationFrameId = requestAnimationFrame(animate);
     };
 
-    const ro = new ResizeObserver(resize);
-    ro.observe(container);
-    animate();
+    const resizeObserver = new ResizeObserver(() => {
+      updateCanvasSize();
+    });
+
+    resizeObserver.observe(container);
+
+    const intersectionObserver = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0 },
+    );
+
+    intersectionObserver.observe(canvas);
+
+    if (isInView) {
+      animationFrameId = requestAnimationFrame(animate);
+    }
 
     return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
+      cancelAnimationFrame(animationFrameId);
+      resizeObserver.disconnect();
+      intersectionObserver.disconnect();
     };
-  }, [setupCanvas, drawGrid, updateSquares, isInView]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const io = new IntersectionObserver(([e]) => setIsInView(e.isIntersecting), { threshold: 0 });
-    io.observe(container);
-    return () => io.disconnect();
-  }, []);
+  }, [setupCanvas, updateSquares, drawGrid, width, height, isInView]);
 
   return (
-    <div ref={containerRef} className={cn('w-full h-full', className)}>
-      <canvas ref={canvasRef} style={{ width: canvasSize.width, height: canvasSize.height }} />
+    <div ref={containerRef} className={cn(`h-full w-full ${className}`)} {...props}>
+      <canvas
+        ref={canvasRef}
+        className="pointer-events-none"
+        style={{ width: canvasSize.width, height: canvasSize.height }}
+      />
     </div>
   );
 };
 
-// ─── Footer Section Types ───────────────────────────────────────────────────
+// ─── useMediaQuery ──────────────────────────────────────────────────────────
 
-interface FooterLink {
-  label: string;
-  href: string;
+function useMediaQuery(query: string) {
+  const [value, setValue] = useState(false);
+
+  useEffect(() => {
+    function checkQuery() {
+      const result = window.matchMedia(query);
+      setValue(result.matches);
+    }
+
+    checkQuery();
+    window.addEventListener("resize", checkQuery);
+    const mediaQuery = window.matchMedia(query);
+    mediaQuery.addEventListener("change", checkQuery);
+
+    return () => {
+      window.removeEventListener("resize", checkQuery);
+      mediaQuery.removeEventListener("change", checkQuery);
+    };
+  }, [query]);
+
+  return value;
 }
 
-interface FooterSection {
-  title: string;
-  links: FooterLink[];
-}
+// ─── Site config ────────────────────────────────────────────────────────────
 
-// ─── Exported Footer Component ──────────────────────────────────────────────
-
-interface FlickeringFooterProps {
-  brandName?: string;
-  brandDescription?: string;
-  sections?: FooterSection[];
-  maskedText?: string;
-  gridColor?: string;
-  gridMaxOpacity?: number;
-  gridFlickerChance?: number;
-  gridSquareSize?: number;
-  gridGap?: number;
-}
-
-const defaultSections: FooterSection[] = [
+const footerLinks = [
   {
-    title: 'Navigation',
+    title: "Navigation",
     links: [
-      { label: 'Home', href: '/' },
-      { label: 'Series', href: '/series' },
-      { label: 'Latest', href: '/latest' },
-      { label: 'Library', href: '/library' },
+      { id: 1, title: "Home", url: "/" },
+      { id: 2, title: "Series", url: "/series" },
+      { id: 3, title: "Latest", url: "/latest" },
+      { id: 4, title: "Library", url: "/library" },
     ],
   },
   {
-    title: 'Legal',
+    title: "Legal",
     links: [
-      { label: 'DMCA', href: '#' },
-      { label: 'Privacy Policy', href: '#' },
-      { label: 'Terms of Service', href: '#' },
+      { id: 5, title: "DMCA", url: "#" },
+      { id: 6, title: "Privacy Policy", url: "#" },
+      { id: 7, title: "Terms of Service", url: "#" },
     ],
   },
   {
-    title: 'Social',
-    links: [{ label: 'Discord', href: '#' }],
+    title: "Social",
+    links: [
+      { id: 8, title: "Discord", url: "#" },
+    ],
   },
 ];
 
-export function FlickeringFooter({
-  brandName = 'Kayn Scan',
-  brandDescription = 'Read the latest Manhwa, Manga, and Manhua releases translated to English at Kayn Scans.',
-  sections = defaultSections,
-  maskedText = 'Kayn Scan',
-  gridColor = 'hsl(var(--primary))',
-  gridMaxOpacity = 0.15,
-  gridFlickerChance = 0.1,
-  gridSquareSize = 4,
-  gridGap = 6,
-}: FlickeringFooterProps) {
+// ─── Exported Component ─────────────────────────────────────────────────────
+
+export const Component = () => {
+  const tablet = useMediaQuery("(max-width: 1024px)");
+
   return (
-    <footer className="relative border-t border-border mt-16 overflow-hidden">
-      {/* Flickering grid background */}
-      <div className="absolute inset-0 z-0">
-        <FlickeringGridInner
-          className="absolute inset-0 w-full h-full"
-          squareSize={gridSquareSize}
-          gridGap={gridGap}
-          color={gridColor}
-          maxOpacity={gridMaxOpacity}
-          flickerChance={gridFlickerChance}
-        />
-      </div>
-
-      {/* Gradient fade at top */}
-      <div
-        className="absolute inset-x-0 top-0 h-24 z-[1]"
-        style={{ background: 'linear-gradient(to bottom, hsl(var(--background)), transparent)' }}
-      />
-
-      {/* Large masked text at bottom */}
-      <div className="absolute bottom-0 inset-x-0 z-[1] flex items-end justify-center overflow-hidden pointer-events-none select-none">
-        <span
-          className="text-[clamp(3rem,10vw,8rem)] font-black uppercase tracking-widest leading-none pb-4 whitespace-nowrap"
-          style={{
-            background: 'linear-gradient(to top, hsl(var(--foreground) / 0.06), transparent)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
-        >
-          {maskedText}
-        </span>
-      </div>
-
-      {/* Content */}
-      <div className="relative z-[2] container py-12 pb-28">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="lg:col-span-1 space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
-                <span className="text-primary font-bold text-sm">K</span>
-              </div>
-              <span className="font-semibold text-foreground text-lg">{brandName}</span>
+    <footer id="footer" className="w-full pb-0 mt-16">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between p-10">
+        <div className="flex flex-col items-start justify-start gap-y-5 max-w-xs mx-0">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+              <span className="text-primary font-bold text-sm">K</span>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">{brandDescription}</p>
-          </div>
-
-          {/* Link columns */}
-          {sections.map((section) => (
-            <div key={section.title} className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">{section.title}</h3>
-              <ul className="space-y-2">
-                {section.links.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      to={link.href}
-                      className="group flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
-                    >
-                      <ChevronRight className="h-4 w-4 mr-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-                      {link.label}
-                    </Link>
+            <p className="text-xl font-semibold text-primary">Kayn Scan</p>
+          </Link>
+          <p className="tracking-tight text-muted-foreground font-medium">
+            Read the latest Manhwa, Manga, and Manhua releases translated to English at Kayn Scans.
+          </p>
+        </div>
+        <div className="pt-5 md:w-1/2">
+          <div className="flex flex-col items-start justify-start md:flex-row md:items-center md:justify-between gap-y-5 lg:pl-10">
+            {footerLinks.map((column, columnIndex) => (
+              <ul key={columnIndex} className="flex flex-col gap-y-2">
+                <li className="mb-2 text-sm font-semibold text-primary">
+                  {column.title}
+                </li>
+                {column.links.map((link) => (
+                  <li
+                    key={link.id}
+                    className="group inline-flex cursor-pointer items-center justify-start gap-1 text-[15px]/snug text-muted-foreground"
+                  >
+                    <Link to={link.url}>{link.title}</Link>
+                    <div className="flex size-4 items-center justify-center border border-border rounded translate-x-0 transform opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100">
+                      <ChevronRight className="h-4 w-4" />
+                    </div>
                   </li>
                 ))}
               </ul>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-
-        {/* Bottom bar */}
-        <div className="mt-10 pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} {brandName}. All rights reserved.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Made with ♥ by <span className="text-primary">{brandName}</span>
-          </p>
+      </div>
+      <div className="w-full h-48 md:h-64 relative mt-24 z-0">
+        <div className="absolute inset-0 bg-gradient-to-t from-transparent to-background z-10 from-40%" />
+        <div className="absolute inset-0 mx-6">
+          <FlickeringGrid
+            text={tablet ? "Kayn Scan" : "Kayn Scan"}
+            fontSize={tablet ? 70 : 90}
+            className="h-full w-full"
+            squareSize={2}
+            gridGap={tablet ? 2 : 3}
+            color="hsl(var(--muted-foreground))"
+            maxOpacity={0.3}
+            flickerChance={0.1}
+          />
         </div>
       </div>
     </footer>
   );
-}
-
-export default FlickeringFooter;
+};
