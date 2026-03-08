@@ -59,7 +59,7 @@ export default function MangaInfo() {
               alt={manga.title}
               className="w-64 h-[360px] object-cover rounded-xl shrink-0 mx-auto sm:mx-0 shadow-lg"
             />
-            <div className="flex-1 space-y-3.5">
+            <div className="flex-1 min-w-0 space-y-3.5">
               <h1 className="text-3xl sm:text-4xl font-bold leading-tight">{manga.title}</h1>
 
               {manga.altTitles && manga.altTitles.length > 0 && (
