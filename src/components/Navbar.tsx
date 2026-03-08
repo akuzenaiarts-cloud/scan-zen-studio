@@ -50,10 +50,10 @@ export default function Navbar() {
           )}
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-2.5">
+          <div className="hidden md:flex items-center gap-3">
             <Button
               variant="ghost"
-              className="rounded-full gap-2.5 px-5 h-11 bg-white/10 hover:bg-white/20 backdrop-blur text-base font-medium"
+              className="rounded-full gap-2.5 px-6 h-12 bg-muted/80 hover:bg-muted text-base font-semibold"
               onClick={() => setSearchOpen(true)}
             >
               <Search className="w-5 h-5" />
@@ -63,7 +63,7 @@ export default function Navbar() {
             <Link to="/latest">
               <Button
                 variant="ghost"
-                className={`rounded-full px-4 h-11 bg-white/10 hover:bg-white/20 backdrop-blur ${isActive('/latest') ? 'bg-white/20' : ''}`}
+                className={`rounded-full px-5 h-12 bg-muted/80 hover:bg-muted ${isActive('/latest') ? 'bg-muted' : ''}`}
               >
                 <ClipboardList className="w-5 h-5" />
               </Button>
@@ -72,7 +72,7 @@ export default function Navbar() {
             <Link to="/series">
               <Button
                 variant="ghost"
-                className={`rounded-full gap-2.5 px-5 h-11 bg-white/10 hover:bg-white/20 backdrop-blur text-base font-medium ${isActive('/series') ? 'bg-white/20' : ''}`}
+                className={`rounded-full gap-2.5 px-6 h-12 bg-muted/80 hover:bg-muted text-base font-semibold ${isActive('/series') ? 'bg-muted' : ''}`}
               >
                 <LayoutGrid className="w-5 h-5" />
                 Series
@@ -82,27 +82,27 @@ export default function Navbar() {
             <Link to="/library">
               <Button
                 variant="ghost"
-                className={`rounded-full gap-2.5 px-5 h-11 bg-white/10 hover:bg-white/20 backdrop-blur text-base font-medium ${isActive('/library') ? 'bg-white/20' : ''}`}
+                className={`rounded-full gap-2.5 px-6 h-12 bg-muted/80 hover:bg-muted text-base font-semibold ${isActive('/library') ? 'bg-muted' : ''}`}
               >
-                <BarChart3 className="w-5 h-5" />
+                <BookOpen className="w-5 h-5" />
                 Library
               </Button>
             </Link>
 
             {isAuthenticated ? (
-              <div className="flex items-center gap-2.5 ml-1">
-                <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/10 backdrop-blur">
+              <div className="flex items-center gap-3 ml-1">
+                <div className="flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-muted/80">
                   <User className="w-5 h-5 text-primary" />
-                  <span className="text-base font-medium">{user?.name}</span>
+                  <span className="text-base font-semibold">{user?.name}</span>
                 </div>
-                <Button variant="ghost" className="rounded-full h-11 px-4 bg-white/10 hover:bg-white/20 backdrop-blur" onClick={logout}>
+                <Button variant="ghost" className="rounded-full h-12 px-5 bg-muted/80 hover:bg-muted" onClick={logout}>
                   <LogOut className="w-5 h-5" />
                 </Button>
               </div>
             ) : (
               <Button
                 variant="ghost"
-                className="rounded-full gap-2.5 px-5 h-11 bg-white/10 hover:bg-white/20 backdrop-blur text-base font-medium ml-1"
+                className="rounded-full gap-2.5 px-6 h-12 bg-muted/80 hover:bg-muted text-base font-semibold ml-1"
                 onClick={() => setShowLoginModal(true)}
               >
                 <LogIn className="w-5 h-5" />
