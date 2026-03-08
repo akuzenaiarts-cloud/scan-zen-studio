@@ -80,7 +80,7 @@ function LatestCard({ manga }: { manga: Manga }) {
           </div>
         </div>
       </Link>
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col py-3">
         <Link to={`/manga/${manga.slug}`}>
           <h3 className="font-bold text-base text-foreground line-clamp-2 hover:text-primary transition-colors">
             {manga.title}
