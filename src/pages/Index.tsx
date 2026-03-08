@@ -15,9 +15,13 @@ export default function Index() {
   const mangaType = mockManga.filter(m => m.type === 'Manga');
 
   return (
-    <div className="container py-6 space-y-10">
-      {/* Hero */}
-      <HeroCarousel />
+    <div className="py-6 space-y-10">
+      {/* Hero — full width */}
+      <div className="-mx-0">
+        <HeroCarousel />
+      </div>
+
+      <div className="container space-y-10">
 
       {/* Trending */}
       <section>
