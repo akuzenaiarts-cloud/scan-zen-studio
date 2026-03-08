@@ -1,13 +1,272 @@
-import { Settings } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Settings, Camera, User, Bell, Moon, Sun, Monitor, Save, LogIn } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function UserSettings() {
+  const { isAuthenticated, user, profile, setShowLoginModal } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [displayName, setDisplayName] = useState(profile?.display_name || '');
+  const [bio, setBio] = useState('');
+  const [avatarPreview, setAvatarPreview] = useState(profile?.avatar_url || '');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Notification preferences (local)
+  const [notifNewChapter, setNotifNewChapter] = useState(true);
+  const [notifCommentReply, setNotifCommentReply] = useState(true);
+  const [notifUpdates, setNotifUpdates] = useState(false);
+
+  // Reading preferences (local)
+  const [themeMode, setThemeMode] = useState<string>(theme);
+  const [readerDirection, setReaderDirection] = useState('vertical');
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be smaller than 2MB');
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    setSaving(true);
+
+    try {
+      let avatarUrl = profile?.avatar_url || '';
+
+      if (avatarFile) {
+        const ext = avatarFile.name.split('.').pop();
+        const path = `${user.id}/avatar.${ext}`;
+        const { error: uploadErr } = await supabase.storage
+          .from('avatars')
+          .upload(path, avatarFile, { upsert: true });
+        if (uploadErr) throw uploadErr;
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+        avatarUrl = urlData.publicUrl;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          display_name: displayName.trim() || null,
+          avatar_url: avatarUrl || null,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      toast.success('Profile updated!');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleThemeChange = (value: string) => {
+    setThemeMode(value);
+    if ((value === 'dark' && theme === 'light') || (value === 'light' && theme === 'dark')) {
+      toggleTheme();
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="w-full px-6 sm:px-10 lg:px-16 xl:px-24 py-20 flex flex-col items-center gap-4 text-center">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+          <LogIn className="w-7 h-7 text-primary" />
+        </div>
+        <h1 className="text-xl font-bold text-foreground">Sign in to access settings</h1>
+        <p className="text-sm text-muted-foreground max-w-sm">You need to be logged in to manage your profile and preferences.</p>
+        <Button onClick={() => setShowLoginModal(true)} className="gap-2">
+          <LogIn className="w-4 h-4" /> Sign In
+        </Button>
+      </div>
+    );
+  }
+
+  const avatarInitial = (displayName || profile?.display_name || user?.email || 'U')[0].toUpperCase();
+
   return (
-    <div className="w-full px-6 sm:px-10 lg:px-16 xl:px-24 py-10">
+    <div className="w-full px-6 sm:px-10 lg:px-16 xl:px-24 py-10 max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-8">
         <Settings className="w-7 h-7 text-primary" />
-        <h1 className="text-2xl font-bold text-foreground">User Settings</h1>
+        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
       </div>
-      <p className="text-muted-foreground">Coming soon — manage your account preferences.</p>
+
+      <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList className="bg-secondary/60">
+          <TabsTrigger value="profile" className="gap-1.5 text-xs"><User className="w-3.5 h-3.5" />Profile</TabsTrigger>
+          <TabsTrigger value="notifications" className="gap-1.5 text-xs"><Bell className="w-3.5 h-3.5" />Notifications</TabsTrigger>
+          <TabsTrigger value="preferences" className="gap-1.5 text-xs"><Monitor className="w-3.5 h-3.5" />Preferences</TabsTrigger>
+        </TabsList>
+
+        {/* Profile Tab */}
+        <TabsContent value="profile">
+          <Card className="bg-secondary/40 border-border">
+            <CardHeader>
+              <CardTitle className="text-base">Profile Information</CardTitle>
+              <CardDescription>Update your display name and avatar.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Avatar */}
+              <div className="flex items-center gap-5">
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="relative w-20 h-20 rounded-full bg-primary/15 flex items-center justify-center overflow-hidden group border-2 border-border hover:border-primary transition-colors"
+                >
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl font-bold text-primary">{avatarInitial}</span>
+                  )}
+                  <div className="absolute inset-0 bg-background/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="w-5 h-5 text-foreground" />
+                  </div>
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Profile Photo</p>
+                  <p className="text-xs text-muted-foreground">JPG, PNG under 2MB. Click the avatar to upload.</p>
+                </div>
+              </div>
+
+              {/* Fields */}
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Display Name</label>
+                  <Input
+                    placeholder="Your display name"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="bg-background border-border max-w-sm"
+                    maxLength={50}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Email</label>
+                  <Input
+                    value={user?.email || ''}
+                    disabled
+                    className="bg-muted border-border max-w-sm opacity-60"
+                  />
+                  <p className="text-[10px] text-muted-foreground">Email is managed by your login provider.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Bio</label>
+                  <Textarea
+                    placeholder="Tell us about yourself..."
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    className="bg-background border-border max-w-sm min-h-[80px] resize-none"
+                    maxLength={300}
+                  />
+                </div>
+              </div>
+
+              <Button onClick={handleSaveProfile} disabled={saving} className="gap-2">
+                <Save className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Notifications Tab */}
+        <TabsContent value="notifications">
+          <Card className="bg-secondary/40 border-border">
+            <CardHeader>
+              <CardTitle className="text-base">Notification Preferences</CardTitle>
+              <CardDescription>Choose what you'd like to be notified about.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {[
+                { label: 'New chapter releases', desc: 'Get notified when a series you follow releases a new chapter.', checked: notifNewChapter, set: setNotifNewChapter },
+                { label: 'Comment replies', desc: 'Get notified when someone replies to your comment.', checked: notifCommentReply, set: setNotifCommentReply },
+                { label: 'Platform updates', desc: 'Receive news about features and events.', checked: notifUpdates, set: setNotifUpdates },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{item.label}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                  <Switch checked={item.checked} onCheckedChange={item.set} />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Preferences Tab */}
+        <TabsContent value="preferences">
+          <Card className="bg-secondary/40 border-border">
+            <CardHeader>
+              <CardTitle className="text-base">Reading & Display</CardTitle>
+              <CardDescription>Customize your reading experience.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Theme */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Theme</p>
+                <RadioGroup value={themeMode} onValueChange={handleThemeChange} className="flex gap-3">
+                  {[
+                    { value: 'light', label: 'Light', icon: Sun },
+                    { value: 'dark', label: 'Dark', icon: Moon },
+                  ].map((t) => (
+                    <label
+                      key={t.value}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-colors ${
+                        themeMode === t.value
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border bg-secondary/30 text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <RadioGroupItem value={t.value} className="sr-only" />
+                      <t.icon className="w-4 h-4" />
+                      <span className="text-sm font-medium">{t.label}</span>
+                    </label>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              {/* Reader Direction */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Default Reader Direction</p>
+                <RadioGroup value={readerDirection} onValueChange={setReaderDirection} className="flex gap-3">
+                  {['vertical', 'horizontal'].map((dir) => (
+                    <label
+                      key={dir}
+                      className={`px-4 py-2.5 rounded-lg border cursor-pointer transition-colors text-sm font-medium capitalize ${
+                        readerDirection === dir
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border bg-secondary/30 text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <RadioGroupItem value={dir} className="sr-only" />
+                      {dir}
+                    </label>
+                  ))}
+                </RadioGroup>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
