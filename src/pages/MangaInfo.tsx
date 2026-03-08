@@ -4,6 +4,7 @@ import { Play, Plus, Bell, Share2, AlertCircle, ChevronDown, ArrowDownNarrowWide
 import { Button } from '@/components/ui/button';
 import { getMangaBySlug, getTrendingManga } from '@/data/mockManga';
 import TypeBadge from '@/components/TypeBadge';
+import TypeFlag from '@/components/TypeFlag';
 import CommentSection from '@/components/CommentSection';
 
 const GENRE_EMOJI: Record<string, string> = {
