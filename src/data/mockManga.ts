@@ -1,5 +1,5 @@
 export type MangaType = 'Manhwa' | 'Manga' | 'Manhua';
-export type MangaStatus = 'Ongoing' | 'Completed' | 'Hiatus';
+export type MangaStatus = 'Ongoing' | 'Completed' | 'Hiatus' | 'Season End' | 'Cancelled';
 
 export interface Chapter {
   id: number;

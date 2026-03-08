@@ -1,88 +1,117 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, BookOpen, Star } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { getFeaturedManga, formatViews } from '@/data/mockManga';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { mockManga, MangaStatus } from '@/data/mockManga';
 import TypeBadge from './TypeBadge';
 
-export default function HeroCarousel() {
-  const featured = getFeaturedManga();
-  const [current, setCurrent] = useState(0);
+const statusColors: Record<MangaStatus, string> = {
+  Ongoing: 'bg-green-400',
+  Hiatus: 'bg-yellow-600',
+  'Season End': 'bg-sky-400',
+  Completed: 'bg-green-700',
+  Cancelled: 'bg-red-400',
+};
 
-  const next = useCallback(() => setCurrent(i => (i + 1) % featured.length), [featured.length]);
-  const prev = useCallback(() => setCurrent(i => (i - 1 + featured.length) % featured.length), [featured.length]);
+const statusTextColors: Record<MangaStatus, string> = {
+  Ongoing: 'text-green-400',
+  Hiatus: 'text-yellow-600',
+  'Season End': 'text-sky-400',
+  Completed: 'text-green-700',
+  Cancelled: 'text-red-400',
+};
+
+export default function HeroCarousel() {
+  const items = mockManga.filter(m => m.featured || m.pinned || m.trending).slice(0, 8);
+  const [current, setCurrent] = useState(0);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const pauseRef = useRef(false);
+
+  const maxIndex = Math.max(0, items.length - 3);
+
+  const next = useCallback(() => setCurrent(i => Math.min(i + 1, maxIndex)), [maxIndex]);
+  const prev = useCallback(() => setCurrent(i => Math.max(i - 1, 0)), []);
 
   useEffect(() => {
-    const timer = setInterval(next, 5000);
+    const timer = setInterval(() => {
+      if (!pauseRef.current) {
+        setCurrent(i => (i >= maxIndex ? 0 : i + 1));
+      }
+    }, 5000);
     return () => clearInterval(timer);
-  }, [next]);
+  }, [maxIndex]);
 
-  if (!featured.length) return null;
-  const manga = featured[current];
+  if (!items.length) return null;
 
   return (
-    <div className="relative w-full h-[400px] md:h-[500px] overflow-hidden rounded-xl">
-      {/* Background */}
-      <div className="absolute inset-0">
-        <img src={manga.banner || manga.cover} alt="" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/30" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50" />
-      </div>
+    <div
+      className="relative overflow-hidden"
+      onMouseEnter={() => (pauseRef.current = true)}
+      onMouseLeave={() => (pauseRef.current = false)}
+    >
+      {/* Track */}
+      <div
+        ref={trackRef}
+        className="flex gap-4 transition-transform duration-500 ease-out"
+        style={{ transform: `translateX(-${current * (100 / 3 + 1.33)}%)` }}
+      >
+        {items.map(manga => (
+          <Link
+            key={manga.id}
+            to={`/manga/${manga.slug}`}
+            className="relative shrink-0 w-[85vw] sm:w-[45vw] lg:w-[calc(33.333%-11px)] rounded-xl overflow-hidden group"
+          >
+            {/* Cover */}
+            <div className="relative h-[400px] md:h-[450px]">
+              <img
+                src={manga.cover}
+                alt={manga.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
 
-      {/* Content */}
-      <div className="relative h-full container flex items-center">
-        <div className="flex items-end gap-8 max-w-3xl">
-          <Link to={`/manga/${manga.slug}`} className="hidden md:block shrink-0">
-            <img
-              src={manga.cover}
-              alt={manga.title}
-              className="w-44 h-64 object-cover rounded-lg shadow-2xl border border-border/30 hover:scale-105 transition-transform"
-            />
+              {/* Type Badge - Top Left */}
+              <div className="absolute top-3 left-3 z-10">
+                <TypeBadge type={manga.type} />
+              </div>
+
+              {/* Bottom Gradient Overlay */}
+              <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+
+              {/* Bottom Content */}
+              <div className="absolute inset-x-0 bottom-0 p-4 space-y-1.5">
+                {manga.altTitles?.[0] && (
+                  <p className="text-[11px] text-white/50 truncate">{manga.altTitles[0]}</p>
+                )}
+                <h3 className="text-lg font-bold text-white line-clamp-1">{manga.title}</h3>
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full animate-[blink_1.5s_ease-in-out_infinite] ${statusColors[manga.status]}`} />
+                  <span className={`text-xs font-semibold ${statusTextColors[manga.status]}`}>
+                    {manga.status}
+                  </span>
+                </div>
+                <p className="text-xs text-white/60 line-clamp-2 leading-relaxed">{manga.description}</p>
+              </div>
+            </div>
           </Link>
-          <div className="flex-1 space-y-3">
-            <TypeBadge type={manga.type} />
-            <Link to={`/manga/${manga.slug}`}>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground hover:text-primary transition-colors">{manga.title}</h2>
-            </Link>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1"><Star className="w-4 h-4 text-yellow-500 fill-yellow-500" /> {manga.rating}</span>
-              <span>{formatViews(manga.views)} views</span>
-              <span>{manga.status}</span>
-            </div>
-            <p className="text-sm text-muted-foreground line-clamp-3 max-w-lg">{manga.description}</p>
-            <div className="flex gap-2 flex-wrap">
-              {manga.genres.map(g => (
-                <span key={g} className="px-2.5 py-1 rounded-md bg-secondary text-xs text-secondary-foreground">{g}</span>
-              ))}
-            </div>
-            <Link to={`/manga/${manga.slug}`}>
-              <Button className="gap-2 mt-2">
-                <BookOpen className="w-4 h-4" />
-                Read Now
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card/60 hover:bg-card flex items-center justify-center transition-colors">
-        <ChevronLeft className="w-5 h-5" />
-      </button>
-      <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card/60 hover:bg-card flex items-center justify-center transition-colors">
-        <ChevronRight className="w-5 h-5" />
-      </button>
-
-      {/* Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-        {featured.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrent(i)}
-            className={`w-2 h-2 rounded-full transition-all ${i === current ? 'bg-primary w-6' : 'bg-muted-foreground/30'}`}
-          />
         ))}
       </div>
+
+      {/* Navigation Arrows */}
+      {current > 0 && (
+        <button
+          onClick={prev}
+          className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card/60 hover:bg-card backdrop-blur-sm flex items-center justify-center transition-colors z-10"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+      )}
+      {current < maxIndex && (
+        <button
+          onClick={next}
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card/60 hover:bg-card backdrop-blur-sm flex items-center justify-center transition-colors z-10"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 }
