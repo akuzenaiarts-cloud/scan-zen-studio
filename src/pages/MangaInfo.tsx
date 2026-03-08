@@ -88,20 +88,20 @@ export default function MangaInfo() {
               {/* Action Buttons */}
               <div className="flex items-center gap-0 mt-2">
                 <Link to={`/manga/${manga.slug}/chapter/1`} className="flex-1">
-                  <Button variant="secondary" className="w-full gap-2 rounded-none rounded-l-lg border border-border/50 h-14 text-base font-medium">
-                    <Play className="w-5 h-5" /> Start Reading
+                  <Button variant="secondary" className="w-full gap-2 rounded-none rounded-l-lg border border-border/50 h-12 text-sm font-medium">
+                    <Play className="w-4 h-4" /> Start Reading
                   </Button>
                 </Link>
                 <Link to={`/manga/${manga.slug}/chapter/${maxChapter}`} className="flex-1">
-                  <Button variant="secondary" className="w-full gap-2 rounded-none border-y border-r border-border/50 h-14 text-base font-medium">
-                    <Play className="w-5 h-5" /> New Chapter
+                  <Button variant="secondary" className="w-full gap-2 rounded-none border-y border-r border-border/50 h-12 text-sm font-medium">
+                    <Play className="w-4 h-4" /> New Chapter
                   </Button>
                 </Link>
-                <Button variant="secondary" className="flex-1 gap-2 rounded-none border-y border-r border-border/50 h-14 text-base font-medium">
-                  <Plus className="w-5 h-5" /> Add to Library
+                <Button variant="secondary" className="flex-1 gap-2 rounded-none border-y border-r border-border/50 h-12 text-sm font-medium">
+                  <Plus className="w-4 h-4" /> Add to Library
                 </Button>
-                <Button variant="secondary" className="rounded-none rounded-r-lg border-y border-r border-border/50 px-5 h-14">
-                  <Bell className="w-5 h-5" />
+                <Button variant="secondary" className="rounded-none rounded-r-lg border-y border-r border-border/50 px-4 h-12">
+                  <Bell className="w-4 h-4" />
                 </Button>
               </div>
             </div>
