@@ -62,10 +62,12 @@ export default function MangaInfo() {
             <div className="flex-1 space-y-3.5">
               <h1 className="text-3xl sm:text-4xl font-bold leading-tight">{manga.title}</h1>
 
-              <div>
-                <p className="text-sm font-semibold text-muted-foreground">Alternative titles</p>
-                <p className="text-sm text-muted-foreground/70">魔法の魔女伝説 · The Arcane Sorceress</p>
-              </div>
+              {manga.altTitles && manga.altTitles.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Alternative titles</p>
+                  <p className="text-sm text-muted-foreground/70">{manga.altTitles.join(' · ')}</p>
+                </div>
+              )}
 
               <div className="flex items-center gap-2.5 flex-wrap">
                 <span className={`px-4 py-1.5 rounded-full text-sm font-bold ${manga.status === 'Ongoing' ? 'bg-green-600 text-white' : manga.status === 'Completed' ? 'bg-red-600 text-white' : 'bg-yellow-600 text-white'}`}>

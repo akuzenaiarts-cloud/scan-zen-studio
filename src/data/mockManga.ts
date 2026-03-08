@@ -22,6 +22,7 @@ export interface Manga {
   id: string;
   slug: string;
   title: string;
+  altTitles?: string[];
   cover: string;
   banner?: string;
   description: string;
@@ -46,6 +47,7 @@ export const mockManga: Manga[] = [
     id: '1',
     slug: 'shadow-monarch',
     title: 'Shadow Monarch',
+    altTitles: ['그림자 군주', 'Shadow Lord'],
     cover: '/manga/cover1.jpg',
     banner: '/manga/cover1.jpg',
     description: 'In a world where hunters fight monsters from dimensional gates, the weakest hunter awakens a mysterious power. As he grows stronger, he discovers the truth behind the gates and the ancient war between light and shadow. His journey from the weakest to the strongest begins now.',
@@ -77,6 +79,7 @@ export const mockManga: Manga[] = [
     id: '2',
     slug: 'arcane-witch',
     title: 'The Arcane Witch',
+    altTitles: ['魔法の魔女伝説', 'The Arcane Sorceress'],
     cover: '/manga/cover2.jpg',
     banner: '/manga/cover2.jpg',
     description: 'A young witch discovers she holds the key to an ancient magic that could reshape the world. Pursued by dark forces and aided by unlikely allies, she must master her powers before it\'s too late.',
@@ -105,6 +108,7 @@ export const mockManga: Manga[] = [
     id: '3',
     slug: 'flame-fist',
     title: 'Flame Fist Chronicles',
+    altTitles: ['화염권 연대기', 'Flame Fist'],
     cover: '/manga/cover3.jpg',
     banner: '/manga/cover3.jpg',
     description: 'In the underground martial arts world, a young fighter with the legendary flame fist technique rises through the ranks. Each battle pushes him closer to discovering the truth about his family\'s legacy.',
@@ -131,6 +135,7 @@ export const mockManga: Manga[] = [
     id: '4',
     slug: 'neon-knight',
     title: 'Neon Knight',
+    altTitles: ['네온 기사', 'Cybernetic Knight'],
     cover: '/manga/cover4.jpg',
     banner: '/manga/cover4.jpg',
     description: 'In a cyberpunk metropolis where corporations rule, a rogue cyborg knight fights to protect the innocent. With each mission, the lines between human and machine blur further.',
@@ -159,6 +164,7 @@ export const mockManga: Manga[] = [
     id: '5',
     slug: 'cherry-blossom-love',
     title: 'Cherry Blossom Love',
+    altTitles: ['桜の恋', 'Sakura Romance'],
     cover: '/manga/cover5.jpg',
     banner: '/manga/cover5.jpg',
     description: 'A heartwarming romance between two childhood friends who reunite under the cherry blossoms. As seasons change, their feelings bloom into something deeper than friendship.',
@@ -183,6 +189,7 @@ export const mockManga: Manga[] = [
     id: '6',
     slug: 'phantom-corridor',
     title: 'Phantom Corridor',
+    altTitles: ['유령 복도', 'Ghost Corridor'],
     cover: '/manga/cover6.jpg',
     banner: '/manga/cover6.jpg',
     description: 'A group of students discover a hidden corridor in their school that leads to a nightmarish dimension. To escape, they must confront their deepest fears and survive the horrors within.',
@@ -208,6 +215,7 @@ export const mockManga: Manga[] = [
     id: '7',
     slug: 'dragon-slayers',
     title: 'Dragon Slayers',
+    altTitles: ['屠龙勇士', 'Dragon Hunters'],
     cover: '/manga/cover7.jpg',
     banner: '/manga/cover7.jpg',
     description: 'Four heroes from different lands unite to face the ancient dragon that threatens to destroy the world. An epic fantasy tale of courage, sacrifice, and the bonds forged in battle.',
@@ -233,6 +241,7 @@ export const mockManga: Manga[] = [
     id: '8',
     slug: 'realm-walker',
     title: 'Realm Walker',
+    altTitles: ['차원 보행자', 'Dimension Walker'],
     cover: '/manga/cover8.jpg',
     banner: '/manga/cover8.jpg',
     description: 'Summoned to another world through a mysterious portal, a young man discovers he has the unique ability to walk between realms. He must use this power to prevent a catastrophic collision of worlds.',
