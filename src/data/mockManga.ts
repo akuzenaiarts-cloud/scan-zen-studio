@@ -269,6 +269,7 @@ export const mockManga: Manga[] = [
       number: 35 - i,
       title: `Chapter ${35 - i}`,
       date: new Date(2026, 2, 8 - i).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      premium: i < 2,
     })),
     comments: [
       { id: 1, user: 'IsekaiLord', avatar: '', text: 'Unique take on the isekai genre!', date: '4 hours ago', likes: 21 },
