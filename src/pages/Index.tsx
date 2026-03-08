@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { TrendingUp, ArrowRight, Megaphone } from 'lucide-react';
+import { ArrowRight, Megaphone } from 'lucide-react';
 import HeroCarousel from '@/components/HeroCarousel';
 import MangaCard from '@/components/MangaCard';
 import AnnouncementBar from '@/components/AnnouncementBar';
@@ -7,32 +7,52 @@ import PinnedCarousel from '@/components/PinnedCarousel';
 import LatestUpdates from '@/components/LatestUpdates';
 import EditorChoice from '@/components/EditorChoice';
 import CompletedSeries from '@/components/CompletedSeries';
+import TypeBadge from '@/components/TypeBadge';
 import { getTrendingManga, mockManga } from '@/data/mockManga';
 
 export default function Index() {
   const trending = getTrendingManga();
-  const mangaType = mockManga.filter((m) => m.type === 'Manga');
+  const mangaType = mockManga.filter(m => m.type === 'Manga');
 
   return (
-    <div className="container py-6 space-y-10">
-      {/* Hero */}
-      <HeroCarousel />
+    <div className="py-6 space-y-10">
+      {/* Hero — full width */}
+      <div className="-mx-0">
+        <HeroCarousel />
+      </div>
+
+      <div className="container max-w-[1600px] xl:px-12 2xl:px-16 space-y-10">
 
       {/* Trending */}
       <section>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold">Trending</h2>
-          </div>
-          <Link to="/series" className="flex items-center gap-1 text-primary hover:underline text-4xl">
-            View All <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {trending.map((m, i) =>
-          <MangaCard key={m.id} manga={m} rank={i + 1} />
-          )}
+        <h2 className="text-2xl font-extrabold mb-4">Trending</h2>
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
+          {trending.map((m, i) => (
+            <Link
+              key={m.id}
+              to={`/manga/${m.slug}`}
+              className="flex-shrink-0 w-[70vw] sm:w-[45vw] md:w-[30vw] lg:w-[calc(100%/6-14px)] group"
+            >
+              <div className="relative overflow-hidden rounded-lg aspect-[3/4.2] bg-secondary">
+                <img
+                  src={m.cover}
+                  alt={m.title}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="absolute top-2 left-2">
+                  <TypeBadge type={m.type} />
+                </div>
+              </div>
+              <div className="bg-secondary/80 rounded-md px-2 py-1.5 mt-2 flex items-center gap-2">
+                <span className="text-2xl font-extrabold text-primary">{i + 1}</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate">{m.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{m.genres.slice(0, 2).join(' · ')}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -58,8 +78,8 @@ export default function Index() {
       <EditorChoice />
 
       {/* Manga - Black & White */}
-      {mangaType.length > 0 &&
-      <section>
+      {mangaType.length > 0 && (
+        <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">Manga – Black & White</h2>
             <Link to="/series" className="flex items-center gap-1 text-sm text-primary hover:underline">
@@ -67,15 +87,16 @@ export default function Index() {
             </Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {mangaType.map((m) =>
-          <MangaCard key={m.id} manga={m} />
-          )}
+            {mangaType.map(m => (
+              <MangaCard key={m.id} manga={m} />
+            ))}
           </div>
         </section>
-      }
+      )}
 
       {/* Completed Series */}
       <CompletedSeries />
-    </div>);
-
+      </div>
+    </div>
+  );
 }
