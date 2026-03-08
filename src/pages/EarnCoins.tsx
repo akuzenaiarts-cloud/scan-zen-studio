@@ -131,7 +131,7 @@ export default function EarnCoins() {
             <p className="text-sm text-muted-foreground">
               {canClaim
                 ? `Claim your Day ${todayDay} reward!`
-                : 'You've completed this week's check-in! 🎉'}
+                : "You've completed this week's check-in! 🎉"}
             </p>
             <Button
               onClick={handleClaim}
