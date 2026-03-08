@@ -68,35 +68,38 @@ export default function EditorChoice() {
             <h3 className="text-4xl md:text-5xl font-extrabold text-foreground mb-2 truncate">{manga.title}</h3>
             <p className="text-base md:text-lg text-muted-foreground line-clamp-4 mb-4 max-w-lg">{manga.description}</p>
 
-            {/* Thumbnails with flanking arrows */}
-            <div className="flex items-center gap-3 mb-3">
-              <button onClick={prev} className="w-11 h-11 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors shrink-0">
+            {/* Cover Slider */}
+            <div className="relative group/slider mb-3">
+              <button onClick={prev} className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/80 backdrop-blur border border-border/60 flex items-center justify-center hover:bg-background transition-colors shadow-lg">
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <div className="flex gap-3">
-                {featured.map((m, i) =>
-                <button
-                  key={m.id}
-                  onClick={() => setCurrent(i)}
-                  className={`w-28 h-44 rounded-lg overflow-hidden border-2 transition-all ${
-                  i === current ? 'border-primary scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`
-                  }>
+              <div className="overflow-hidden rounded-xl mx-6">
+                <div
+                  className="flex gap-2 transition-transform duration-500 ease-out"
+                  style={{ transform: `translateX(-${current * 140}px)` }}>
+                  {featured.map((m, i) =>
+                  <button
+                    key={m.id}
+                    onClick={() => setCurrent(i)}
+                    className={`shrink-0 w-[130px] h-[180px] rounded-lg overflow-hidden border-2 transition-all duration-300 ${
+                    i === current ? 'border-primary scale-105 shadow-lg shadow-primary/20' : 'border-transparent opacity-70 hover:opacity-100'}`}>
                     <img src={m.cover} alt={m.title} className="w-full h-full object-cover" />
                   </button>
-                )}
+                  )}
+                </div>
               </div>
-              <button onClick={next} className="w-11 h-11 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors shrink-0">
+              <button onClick={next} className="absolute -right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/80 backdrop-blur border border-border/60 flex items-center justify-center hover:bg-background transition-colors shadow-lg">
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
 
             {/* Dots */}
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-1.5 bg-muted/50 rounded-full px-4 py-2 w-fit mx-auto">
               {featured.map((_, i) =>
               <button
                 key={i}
                 onClick={() => setCurrent(i)}
-                className={`h-2 rounded-full transition-all ${i === current ? 'bg-primary w-5' : 'bg-muted-foreground/30 w-2'}`} />
+                className={`w-2.5 h-2.5 rounded-full transition-all ${i === current ? 'bg-primary scale-110' : 'bg-muted-foreground/40 hover:bg-muted-foreground/60'}`} />
               )}
             </div>
           </div>
