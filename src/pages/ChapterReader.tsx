@@ -146,7 +146,7 @@ export default function ChapterReader() {
               {Object.values(reactionCounts).reduce((a, b) => a + b, 0)} Reactions
             </p>
           </div>
-          <div className="flex justify-center gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 max-w-lg sm:max-w-2xl mx-auto">
             {[
               { key: 'like', emoji: '👍', label: 'Like' },
               { key: 'funny', emoji: '🤣', label: 'Funny' },
