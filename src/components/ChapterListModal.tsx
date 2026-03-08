@@ -86,7 +86,7 @@ const ChapterListModal = ({
                         </div>
                         <div className="flex items-center space-x-1">
                           <Eye className="w-3 h-3" />
-                          <span>{Math.floor(Math.random() * 900 + 100)}</span>
+                          <span>{(chapter.number * 137 + 42) % 900 + 100}</span>
                         </div>
                         <span>{chapter.pages?.length || 8} pages</span>
                       </div>

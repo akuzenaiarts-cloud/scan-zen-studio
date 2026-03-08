@@ -297,6 +297,26 @@ export default function ChapterReader() {
               </button>
               <button
                 onClick={() => {
+                  adjustZoom(10);
+                  setShowOptions(false);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors"
+              >
+                <ZoomIn className="w-4 h-4 text-muted-foreground" />
+                Zoom In
+              </button>
+              <button
+                onClick={() => {
+                  adjustZoom(-10);
+                  setShowOptions(false);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors"
+              >
+                <ZoomOut className="w-4 h-4 text-muted-foreground" />
+                Zoom Out
+              </button>
+              <button
+                onClick={() => {
                   setZoom(100);
                   setShowOptions(false);
                 }}
