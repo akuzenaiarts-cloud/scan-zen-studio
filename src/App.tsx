@@ -18,6 +18,7 @@ import EarnCoins from "./pages/EarnCoins";
 import CoinShop from "./pages/CoinShop";
 import UserSettings from "./pages/UserSettings";
 import DMCA from "./pages/DMCA";
+import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,10 +26,12 @@ const queryClient = new QueryClient();
 const AppLayout = () => {
   const location = useLocation();
   const isChapterReader = /^\/manga\/[^/]+\/chapter\//.test(location.pathname);
+  const isAdminPanel = location.pathname.startsWith('/admin');
+  const hideShell = isChapterReader || isAdminPanel;
 
   return (
     <div className="min-h-screen flex flex-col">
-      {!isChapterReader && <Navbar />}
+      {!hideShell && <Navbar />}
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Index />} />
@@ -41,10 +44,11 @@ const AppLayout = () => {
           <Route path="/coin-shop" element={<CoinShop />} />
           <Route path="/settings" element={<UserSettings />} />
           <Route path="/dmca" element={<DMCA />} />
+          <Route path="/admin" element={<AdminPanel />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      {!isChapterReader && <Footer />}
+      {!hideShell && <Footer />}
       <LoginModal />
     </div>
   );
