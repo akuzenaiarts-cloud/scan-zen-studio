@@ -26,10 +26,45 @@ export default function EditorChoice() {
         <h2 className="font-bold text-4xl">Editor's Choice</h2>
       </div>
 
-      <div className="relative rounded-xl overflow-hidden bg-card border border-border/40">
-        <div className="flex flex-col md:flex-row">
-          {/* Left - Info */}
-          <div className="flex-1 p-6 md:p-8 flex flex-col justify-center">
+      <div className="relative rounded-xl bg-card border border-border/40 md:pr-[440px]">
+        {/* Floating Cover */}
+        <div className="hidden md:block absolute right-6 -top-6 w-[300px] h-[400px] rounded-2xl overflow-hidden border border-border/40 shadow-xl z-10">
+          <img
+            src={manga.banner || manga.cover}
+            alt={manga.title}
+            className="w-full h-full object-cover"
+          />
+          <Link
+            to={`/manga/${manga.slug}`}
+            className="absolute bottom-4 right-4">
+            <Button size="sm" className="gap-2 rounded-full bg-background/80 backdrop-blur text-foreground hover:bg-background/90">
+              <Play className="w-3.5 h-3.5 fill-current" />
+              Start Reading
+            </Button>
+          </Link>
+        </div>
+
+        <div className="flex flex-col">
+          {/* Mobile Cover */}
+          <div className="relative w-full h-[250px] md:hidden">
+            <img
+              src={manga.banner || manga.cover}
+              alt={manga.title}
+              className="w-full h-full object-cover rounded-t-xl"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
+            <Link
+              to={`/manga/${manga.slug}`}
+              className="absolute bottom-4 right-4">
+              <Button size="sm" className="gap-2 rounded-full bg-background/80 backdrop-blur text-foreground hover:bg-background/90">
+                <Play className="w-3.5 h-3.5 fill-current" />
+                Start Reading
+              </Button>
+            </Link>
+          </div>
+
+          {/* Info */}
+          <div className="p-6 md:p-8 flex flex-col justify-center">
             <h3 className="text-4xl md:text-5xl font-extrabold text-foreground mb-2 truncate">{manga.title}</h3>
             <p className="text-base md:text-lg text-muted-foreground line-clamp-4 mb-4 max-w-lg">{manga.description}</p>
 
@@ -64,26 +99,6 @@ export default function EditorChoice() {
                 className={`h-2 rounded-full transition-all ${i === current ? 'bg-primary w-5' : 'bg-muted-foreground/30 w-2'}`} />
               )}
             </div>
-          </div>
-
-          {/* Right - Cover */}
-          <div className="relative w-full md:w-[420px] h-[250px] md:h-auto shrink-0">
-            <img
-              src={manga.banner || manga.cover}
-              alt={manga.title}
-              className="w-full h-full object-cover" />
-            
-            <div className="absolute inset-0 bg-gradient-to-r from-card via-card/30 to-transparent hidden md:block" />
-            <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent md:hidden" />
-            <Link
-              to={`/manga/${manga.slug}`}
-              className="absolute bottom-4 right-4">
-              
-              <Button size="sm" className="gap-2 rounded-full bg-background/80 backdrop-blur text-foreground hover:bg-background/90">
-                <Play className="w-3.5 h-3.5 fill-current" />
-                Start Reading
-              </Button>
-            </Link>
           </div>
         </div>
       </div>
