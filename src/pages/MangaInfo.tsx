@@ -102,31 +102,31 @@ export default function MangaInfo() {
 
           {/* Share / Report / Discord Cards */}
           <div className="space-y-2.5">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/60 border border-border/50">
+            <div className="flex items-center justify-between p-5 rounded-xl bg-secondary/60 border border-border/50">
               <div>
-                <p className="text-sm font-semibold">Share Kayn Scan</p>
-                <p className="text-xs text-muted-foreground">to your friends</p>
+                <p className="text-base font-semibold">Share Kayn Scan</p>
+                <p className="text-sm text-muted-foreground">to your friends</p>
               </div>
-              <Button size="icon" className="rounded-full bg-primary h-9 w-9 shadow-md">
-                <Share2 className="w-4 h-4" />
+              <Button size="icon" className="rounded-full bg-primary h-11 w-11 shadow-md">
+                <Share2 className="w-5 h-5" />
               </Button>
             </div>
             <div className="flex gap-2.5">
-              <div className="flex-1 flex items-center justify-between p-3.5 rounded-xl bg-secondary/60 border border-border/50">
+              <div className="flex-1 flex items-center justify-between p-4 rounded-xl bg-secondary/60 border border-border/50">
                 <div>
-                  <p className="text-xs font-semibold">Facing an Issue?</p>
-                  <p className="text-[10px] text-muted-foreground">Let us know, and we'll help ASAP</p>
+                  <p className="text-sm font-semibold">Facing an Issue?</p>
+                  <p className="text-xs text-muted-foreground">Let us know, and we'll help ASAP</p>
                 </div>
-                <Button size="sm" variant="destructive" className="text-xs rounded-lg gap-1.5 h-8 px-3">
-                  <AlertCircle className="w-3 h-3" /> Report
+                <Button size="sm" variant="destructive" className="text-sm rounded-lg gap-1.5 h-9 px-4">
+                  <AlertCircle className="w-4 h-4" /> Report
                 </Button>
               </div>
-              <div className="flex-1 flex items-center justify-between p-3.5 rounded-xl bg-secondary/60 border border-border/50">
+              <div className="flex-1 flex items-center justify-between p-4 rounded-xl bg-secondary/60 border border-border/50">
                 <div>
-                  <p className="text-xs font-semibold">Join Our Socials</p>
-                  <p className="text-[10px] text-muted-foreground">to explore more</p>
+                  <p className="text-sm font-semibold">Join Our Socials</p>
+                  <p className="text-xs text-muted-foreground">to explore more</p>
                 </div>
-                <Button size="sm" className="text-xs rounded-lg gap-1.5 h-8 px-3 bg-[#5865F2] hover:bg-[#4752C4]">
+                <Button size="sm" className="text-sm rounded-lg gap-1.5 h-9 px-4 bg-[#5865F2] hover:bg-[#4752C4]">
                   Discord
                 </Button>
               </div>
