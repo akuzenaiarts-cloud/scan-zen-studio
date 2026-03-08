@@ -68,13 +68,29 @@ export default function ChapterReader() {
     }
   };
 
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `${manga.title} - Chapter ${chapterNum}`,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({ title: 'Link copied!', description: 'Chapter link copied to clipboard.' });
+    }
+  };
+
+  const handleReport = () => {
+    toast({ title: 'Report submitted', description: 'Thanks for letting us know. We\'ll look into it.' });
+    setShowOptions(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Sticky Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="w-full px-2 sm:px-4">
           <div className="flex items-center justify-between h-14 sm:h-16">
-            {/* Left - Navigation */}
             <div className="flex items-center space-x-1 sm:space-x-2">
               <Button variant="ghost" size="sm" asChild className="text-xs sm:text-sm px-2 sm:px-3">
                 <Link to="/">
@@ -93,15 +109,11 @@ export default function ChapterReader() {
               </Button>
             </div>
 
-            {/* Center - Title */}
             <div className="text-center flex-1 px-2 max-w-xs sm:max-w-md">
               <h1 className="font-semibold text-foreground text-xs sm:text-base truncate">{manga.title}</h1>
-              <p className="text-xs text-muted-foreground truncate">
-                Ch {chapterNum}
-              </p>
+              <p className="text-xs text-muted-foreground truncate">Ch {chapterNum}</p>
             </div>
 
-            {/* Right - Zoom Controls (desktop) */}
             <div className="hidden sm:flex items-center space-x-1">
               <Button variant="ghost" size="sm" onClick={() => adjustZoom(-10)} className="p-1 sm:p-2">
                 <ZoomOut className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -208,6 +220,7 @@ export default function ChapterReader() {
                     </div>
                   </Link>
                 )}
+              </div>
 
               {/* Reactions */}
               <div className="text-center space-y-4 py-4">
@@ -251,6 +264,74 @@ export default function ChapterReader() {
       <div className="lg:hidden px-2 sm:px-4 pb-8">
         <CommentSection comments={manga.comments} title="Chapter Comments" />
       </div>
+
+      {/* Floating Options Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {/* Options menu */}
+        {showOptions && (
+          <div className="absolute bottom-14 right-0 w-52 bg-card border border-border rounded-xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200">
+            <div className="p-2 space-y-1">
+              <button
+                onClick={handleShare}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors"
+              >
+                <Share2 className="w-4 h-4 text-primary" />
+                Share Chapter
+              </button>
+              <button
+                onClick={handleReport}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors"
+              >
+                <Flag className="w-4 h-4 text-destructive" />
+                Report Issue
+              </button>
+              <button
+                onClick={() => {
+                  window.open('https://discord.gg', '_blank');
+                  setShowOptions(false);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors"
+              >
+                <MessageSquare className="w-4 h-4 text-[hsl(235,86%,65%)]" />
+                Join Discord
+              </button>
+              <button
+                onClick={() => {
+                  setShowChapterList(true);
+                  setShowOptions(false);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors"
+              >
+                <List className="w-4 h-4 text-muted-foreground" />
+                Chapter List
+              </button>
+              <button
+                onClick={() => {
+                  setZoom(100);
+                  setShowOptions(false);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4 text-muted-foreground" />
+                Reset Zoom
+              </button>
+            </div>
+          </div>
+        )}
+
+        <Button
+          size="icon"
+          onClick={() => setShowOptions(!showOptions)}
+          className="h-12 w-12 rounded-full shadow-lg border border-border/50"
+        >
+          {showOptions ? <X className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
+        </Button>
+      </div>
+
+      {/* Backdrop for options menu */}
+      {showOptions && (
+        <div className="fixed inset-0 z-40" onClick={() => setShowOptions(false)} />
+      )}
 
       {/* Chapter List Modal */}
       {showChapterList && (
