@@ -53,7 +53,7 @@ export default function Navbar() {
                 size="sm"
                 className={`rounded-full gap-2 px-4 h-9 bg-secondary/80 hover:bg-secondary text-sm font-medium ${isActive('/series') ? 'bg-secondary text-foreground' : ''}`}
               >
-                <BookOpen className="w-4 h-4" />
+                <LayoutGrid className="w-4 h-4" />
                 Series
               </Button>
             </Link>
