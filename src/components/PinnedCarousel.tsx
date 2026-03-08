@@ -23,43 +23,43 @@ export default function PinnedCarousel() {
           <Pin className="w-5 h-5 text-primary" />
           <h2 className="text-xl font-bold">Pinned Series</h2>
         </div>
-        <Link to="/series" className="flex items-center gap-1 text-sm text-primary hover:underline">
-          View all <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
+        
+
+        
       </div>
 
       <div className="relative group/carousel">
         <button
           onClick={() => scroll('left')}
-          className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors opacity-0 group-hover/carousel:opacity-100"
-        >
+          className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors opacity-0 group-hover/carousel:opacity-100">
+          
           <ChevronLeft className="w-4 h-4" />
         </button>
         <button
           onClick={() => scroll('right')}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors opacity-0 group-hover/carousel:opacity-100"
-        >
+          className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors opacity-0 group-hover/carousel:opacity-100">
+          
           <ChevronRight className="w-4 h-4" />
         </button>
 
         <div
           ref={scrollRef}
           className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {[...pinned, ...pinned].map((manga, i) => (
-            <Link
-              key={`${manga.id}-${i}`}
-              to={`/manga/${manga.slug}`}
-              className="shrink-0 w-[200px] group"
-            >
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          
+          {[...pinned, ...pinned].map((manga, i) =>
+          <Link
+            key={`${manga.id}-${i}`}
+            to={`/manga/${manga.slug}`}
+            className="shrink-0 w-[200px] group">
+            
               <div className="relative rounded-lg overflow-hidden aspect-[3/4] bg-secondary">
                 <img
-                  src={manga.cover}
-                  alt={manga.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
-                />
+                src={manga.cover}
+                alt={manga.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy" />
+              
                 <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
                 <div className="absolute top-2 left-2">
                   <TypeBadge type={manga.type} />
@@ -73,17 +73,17 @@ export default function PinnedCarousel() {
                     </span>
                     <span>{formatViews(manga.views)}</span>
                   </div>
-                  {manga.chapters.length > 0 && (
-                    <div className="mt-1 text-[10px] text-muted-foreground/60">
+                  {manga.chapters.length > 0 &&
+                <div className="mt-1 text-[10px] text-muted-foreground/60">
                       Chapter {manga.chapters[0].number} · {manga.chapters[0].date}
                     </div>
-                  )}
+                }
                 </div>
               </div>
             </Link>
-          ))}
+          )}
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 }
