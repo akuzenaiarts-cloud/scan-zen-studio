@@ -117,7 +117,7 @@ export default function Navbar() {
               </Link>
               <Link to="/library" onClick={() => setMobileOpen(false)}>
                 <Button variant={isActive('/library') ? 'default' : 'secondary'} className="w-full justify-start gap-2 rounded-full">
-                  <Library className="w-4 h-4" /> Library
+                  <BarChart3 className="w-4 h-4" /> Library
                 </Button>
               </Link>
               {isAuthenticated ? (
