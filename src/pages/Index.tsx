@@ -1,16 +1,21 @@
 import { Link } from 'react-router-dom';
-import { TrendingUp, Pin, Clock, ArrowRight } from 'lucide-react';
+import { TrendingUp, ArrowRight, Megaphone } from 'lucide-react';
 import HeroCarousel from '@/components/HeroCarousel';
 import MangaCard from '@/components/MangaCard';
-import { getTrendingManga, getPinnedManga, mockManga } from '@/data/mockManga';
+import AnnouncementBar from '@/components/AnnouncementBar';
+import PinnedCarousel from '@/components/PinnedCarousel';
+import LatestUpdates from '@/components/LatestUpdates';
+import EditorChoice from '@/components/EditorChoice';
+import CompletedSeries from '@/components/CompletedSeries';
+import { getTrendingManga, mockManga } from '@/data/mockManga';
 
 export default function Index() {
   const trending = getTrendingManga();
-  const pinned = getPinnedManga();
-  const latest = mockManga.slice().sort((a, b) => b.chapters.length - a.chapters.length);
+  const mangaType = mockManga.filter(m => m.type === 'Manga');
 
   return (
     <div className="container py-6 space-y-10">
+      {/* Hero */}
       <HeroCarousel />
 
       {/* Trending */}
@@ -18,7 +23,7 @@ export default function Index() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold">Trending Now</h2>
+            <h2 className="text-xl font-bold">Trending</h2>
           </div>
           <Link to="/series" className="flex items-center gap-1 text-sm text-primary hover:underline">
             View All <ArrowRight className="w-4 h-4" />
@@ -31,38 +36,46 @@ export default function Index() {
         </div>
       </section>
 
+      {/* Announcement Bar */}
+      <AnnouncementBar />
+
+      {/* New manga announcement */}
+      <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary/10 border border-primary/20 text-sm">
+        <Megaphone className="w-4 h-4 text-primary shrink-0" />
+        <span className="text-muted-foreground">
+          <strong className="text-foreground">New Manga Series Added</strong> · Check out our latest additions in the 'Latest Series' section — your feedback means a lot!
+        </span>
+        <Link to="/latest" className="ml-auto text-primary hover:underline text-xs font-medium whitespace-nowrap">View all</Link>
+      </div>
+
       {/* Pinned Series */}
-      {pinned.length > 0 && (
+      <PinnedCarousel />
+
+      {/* Latest Updates */}
+      <LatestUpdates />
+
+      {/* Editor's Choice */}
+      <EditorChoice />
+
+      {/* Manga - Black & White */}
+      {mangaType.length > 0 && (
         <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Pin className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold">Pinned Series</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Manga – Black & White</h2>
+            <Link to="/series" className="flex items-center gap-1 text-sm text-primary hover:underline">
+              View all <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {pinned.map(m => (
+            {mangaType.map(m => (
               <MangaCard key={m.id} manga={m} />
             ))}
           </div>
         </section>
       )}
 
-      {/* Latest Updates */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold">Latest Updates</h2>
-          </div>
-          <Link to="/latest" className="flex items-center gap-1 text-sm text-primary hover:underline">
-            View All <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {latest.slice(0, 6).map(m => (
-            <MangaCard key={m.id} manga={m} showChapters />
-          ))}
-        </div>
-      </section>
+      {/* Completed Series */}
+      <CompletedSeries />
     </div>
   );
 }
