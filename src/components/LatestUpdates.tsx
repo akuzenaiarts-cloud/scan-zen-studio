@@ -1,139 +1,109 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Grid3X3, Check, Crown } from 'lucide-react';
+import { Clock, ArrowRight } from 'lucide-react';
 import { mockManga, Manga } from '@/data/mockManga';
 import TypeBadge from './TypeBadge';
 
-const FILTER_TABS = ['All Series', 'Manga', 'Manhwa', 'Manhua'] as const;
-
-const TAB_ICONS: Record<string, React.ReactNode> = {
-  'All Series': <Grid3X3 className="w-3.5 h-3.5" />,
-  'Manga': <span className="w-5 h-5 rounded-full bg-muted/50 flex items-center justify-center text-[10px] shrink-0">🇯🇵</span>,
-  'Manhwa': <span className="w-5 h-5 rounded-full bg-muted/50 flex items-center justify-center text-[10px] shrink-0">🇰🇷</span>,
-  'Manhua': <span className="w-5 h-5 rounded-full bg-muted/50 flex items-center justify-center text-[10px] shrink-0">🇨🇳</span>,
-};
+const FILTER_TABS = ['All Series', 'Free Series', 'Action', 'Romance'] as const;
 
 export default function LatestUpdates() {
   const [activeTab, setActiveTab] = useState<string>('All Series');
 
-  const filtered = mockManga
-    .filter(m => {
-      if (activeTab === 'All Series') return true;
-      return m.type === activeTab;
-    })
-    .sort((a, b) => b.chapters.length - a.chapters.length);
+  const filtered = mockManga.
+  filter((m) => {
+    if (activeTab === 'All Series' || activeTab === 'Free Series') return true;
+    return m.genres.includes(activeTab);
+  }).
+  sort((a, b) => b.chapters.length - a.chapters.length);
+
+  // Create a 3-column grid of manga with chapter lists
+  const rows: Manga[][] = [];
+  for (let i = 0; i < filtered.length; i += 3) {
+    rows.push(filtered.slice(i, i + 3));
+  }
 
   return (
     <section>
-      <div className="flex items-center justify-between gap-4 mb-5">
-        <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-extrabold whitespace-nowrap">Latest Updates</h2>
-          <div className="bg-secondary/60 rounded-full px-1 py-1 flex items-center gap-1">
-            {FILTER_TABS.map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                  activeTab === tab
-                    ? 'text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {TAB_ICONS[tab]}
-                <span>{tab}</span>
-                {activeTab === tab && <Check className="w-3.5 h-3.5 ml-0.5" />}
-              </button>
-            ))}
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2">
+          <Clock className="w-5 h-5 text-primary" />
+          <h2 className="font-bold text-4xl">Latest Updates</h2>
         </div>
-        <Link to="/latest" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground shrink-0">
-          View all &gt;
-        </Link>
+        <div className="flex items-center gap-2 flex-wrap">
+          {FILTER_TABS.map((tab) =>
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
+            activeTab === tab ?
+            'bg-primary text-primary-foreground border-primary' :
+            'bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'}`
+            }>
+            
+              {tab === 'All Series' && '✓ '}{tab}
+            </button>
+          )}
+          <Link to="/latest" className="flex items-center gap-1 text-sm text-primary hover:underline ml-2">
+            View all <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-        {filtered.map(manga => (
+      <div className="space-y-0">
+        {rows.map((row, ri) =>
+        <div key={ri} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-0 border-t border-border/40">
+            {row.map((manga) =>
           <LatestCard key={manga.id} manga={manga} />
-        ))}
+          )}
+          </div>
+        )}
       </div>
-    </section>
-  );
+    </section>);
+
 }
 
-function LatestCard({ manga }: { manga: Manga }) {
-  const allChapters = manga.chapters.slice(0, 4);
-  const premiumChapters = allChapters.slice(0, 2);
-  const freeChapters = allChapters.slice(2, 4);
+function LatestCard({ manga }: {manga: Manga;}) {
+  const recentChapters = manga.chapters.slice(0, 3);
 
   return (
-    <div className="flex gap-3 pr-3 rounded-lg border border-border/40 bg-card/60 hover:bg-card/80 transition-colors group overflow-hidden">
-      <Link to={`/manga/${manga.slug}`} className="shrink-0 self-stretch">
-        <div className="relative w-[140px] h-full overflow-hidden">
+    <div className="flex gap-3 p-3 border-b border-r border-border/30 hover:bg-card/60 transition-colors group">
+      <Link to={`/manga/${manga.slug}`} className="shrink-0">
+        <div className="relative w-[70px] h-[95px] rounded-md overflow-hidden">
           <img
             src={manga.cover}
             alt={manga.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
+            loading="lazy" />
+          
           <div className="absolute top-1 left-1">
             <TypeBadge type={manga.type} />
           </div>
         </div>
       </Link>
-      <div className="flex-1 min-w-0 flex flex-col py-3 overflow-hidden">
+      <div className="flex-1 min-w-0">
         <Link to={`/manga/${manga.slug}`}>
-          <h3 className="font-bold text-base text-foreground line-clamp-2 hover:text-primary transition-colors">
+          <h3 className="font-semibold text-sm text-foreground line-clamp-1 hover:text-primary transition-colors">
             {manga.title}
           </h3>
         </Link>
-
-        {/* Premium chapters */}
-        <div className="mt-2">
-          {premiumChapters.map((ch, idx) => (
-            <Link
-              key={ch.id}
-              to={`/manga/${manga.slug}/chapter/${ch.number}`}
-              className={`flex items-center justify-between text-xs py-2 hover:text-primary transition-colors ${
-                idx < premiumChapters.length - 1 ? 'border-b border-border/30' : ''
-              }`}
-            >
-              <span className="flex items-center gap-1.5 text-muted-foreground hover:text-primary truncate">
-                <span className="truncate">Chapter {ch.number}</span>
-                <Crown className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
-                {idx === 0 && (
-                  <span className="shrink-0 w-4 h-4 rounded-full bg-primary flex items-center justify-center pulse">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />
-                  </span>
-                )}
-              </span>
-              <span className="text-muted-foreground/50 text-[11px] shrink-0 ml-2">{ch.date}</span>
-            </Link>
-          ))}
-        </div>
-
-        {/* Divider between premium and free */}
-        {freeChapters.length > 0 && (
-          <div className="border-t border-muted-foreground/30 my-0.5" />
-        )}
-
-        {/* Free chapters */}
-        <div>
-          {freeChapters.map((ch, idx) => (
-            <Link
-              key={ch.id}
-              to={`/manga/${manga.slug}/chapter/${ch.number}`}
-              className={`flex items-center justify-between text-xs py-2 hover:text-primary transition-colors ${
-                idx < freeChapters.length - 1 ? 'border-b border-border/30' : ''
-              }`}
-            >
-              <span className="text-muted-foreground hover:text-primary truncate">
+        <div className="mt-1.5 space-y-1">
+          {recentChapters.map((ch) =>
+          <Link
+            key={ch.id}
+            to={`/manga/${manga.slug}/chapter/${ch.number}`}
+            className="flex items-center justify-between text-xs hover:text-primary transition-colors">
+            
+              <span className="text-muted-foreground hover:text-primary">
                 Chapter {ch.number}
+                {ch.number === manga.chapters[0]?.number &&
+              <span className="ml-1.5 px-1.5 py-0.5 rounded bg-primary/15 text-primary text-[10px] font-medium">NEW</span>
+              }
               </span>
-              <span className="text-muted-foreground/50 text-[11px] shrink-0 ml-2">{ch.date}</span>
+              <span className="text-muted-foreground/50 text-[11px]">{ch.date}</span>
             </Link>
-          ))}
+          )}
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }

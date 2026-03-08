@@ -20,8 +20,8 @@ export default function PinnedCarousel() {
     <section>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Pin className="w-5 h-5 text-primary" />
-          <h2 className="text-xl font-bold">Pinned Series</h2>
+          <Pin className="text-primary h-[40px] w-[40px]" />
+          <h2 className="font-bold text-4xl">Pinned Series</h2>
         </div>
         
 
