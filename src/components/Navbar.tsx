@@ -43,7 +43,7 @@ export default function Navbar() {
                 size="sm"
                 className={`rounded-full px-3 h-9 bg-secondary/80 hover:bg-secondary ${isActive('/latest') ? 'bg-secondary text-foreground' : ''}`}
               >
-                <Bookmark className="w-4 h-4" />
+                <ClipboardList className="w-4 h-4" />
               </Button>
             </Link>
 
