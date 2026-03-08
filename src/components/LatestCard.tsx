@@ -67,7 +67,7 @@ export default function LatestCard({ manga }: { manga: Manga }) {
               }`}
             >
               <span className="text-muted-foreground hover:text-primary truncate">
-                Chapter {ch.number}
+                Ch. {ch.number}
               </span>
               <span className="text-muted-foreground/50 text-[11px] shrink-0 ml-2">{ch.date}</span>
             </Link>
