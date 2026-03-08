@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, LayoutGrid, LogIn, LogOut, User, ClipboardList, ArrowLeft, BookOpen, Bell, Moon, Sun } from 'lucide-react';
+import { Search, Menu, X, LayoutGrid, LogIn, ClipboardList, ArrowLeft, Bell, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import SearchModal from './SearchModal';
+import UserMenu from './UserMenu';
 import logoImg from '@/assets/logo.png';
 
 const NAV_LINKS = [
   { path: '/latest', label: 'Latest', icon: ClipboardList },
   { path: '/series', label: 'Series', icon: LayoutGrid },
-  { path: '/library', label: 'Library', icon: BookOpen },
 ];
 
 export default function Navbar() {
-  const { isAuthenticated, profile, logout, setShowLoginModal } = useAuth();
+  const { isAuthenticated, setShowLoginModal } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -70,7 +70,7 @@ export default function Navbar() {
               <span className="hidden lg:inline">Search</span>
             </Button>
 
-            {/* Nav links */}
+            {/* Nav links (no Library — moved to UserMenu) */}
             {NAV_LINKS.map(({ path, label, icon: Icon }) => (
               <Link key={path} to={path}>
                 <Button
@@ -100,34 +100,21 @@ export default function Navbar() {
               <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
             </Button>
 
-            {/* Theme toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted transition-all duration-200 hover:scale-[1.05]"
-              onClick={toggleTheme}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
+            {/* Theme toggle (only when NOT logged in — moved to UserMenu when logged in) */}
+            {!isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted transition-all duration-200 hover:scale-[1.05]"
+                onClick={toggleTheme}
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
+            )}
 
             {/* Auth */}
             {isAuthenticated ? (
-              <div className="flex items-center gap-2 ml-1">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/60 border border-border/40">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                    <User className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <span className="text-sm font-medium">{profile?.display_name || 'User'}</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted transition-all duration-200 hover:scale-[1.05]"
-                  onClick={logout}
-                >
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </div>
+              <UserMenu />
             ) : (
               <Button
                 variant="ghost"
@@ -150,23 +137,29 @@ export default function Navbar() {
               <Bell className="w-4 h-4" />
               <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted"
-              onClick={toggleTheme}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
+
+            {/* Mobile: show profile icon if logged in, else theme toggle */}
+            {isAuthenticated ? (
+              <UserMenu />
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted"
+                onClick={toggleTheme}
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
+            )}
+
             <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
           </div>
         </div>
-
       </nav>
 
-      {/* Mobile menu popup */}
+      {/* Mobile menu popup — no Library or Logout here */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[100] md:hidden flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
@@ -201,23 +194,18 @@ export default function Navbar() {
                 </Button>
               </Link>
             ))}
-            <div className="h-px bg-border/40 my-1" />
-            {isAuthenticated ? (
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-2.5 rounded-xl h-12 bg-muted/40 hover:bg-muted text-sm font-medium"
-                onClick={() => { logout(); setMobileOpen(false); }}
-              >
-                <LogOut className="w-4 h-4" /> Sign Out
-              </Button>
-            ) : (
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-2.5 rounded-xl h-12 bg-primary/15 text-primary text-sm font-medium"
-                onClick={() => { setShowLoginModal(true); setMobileOpen(false); }}
-              >
-                <LogIn className="w-4 h-4" /> Sign in
-              </Button>
+
+            {!isAuthenticated && (
+              <>
+                <div className="h-px bg-border/40 my-1" />
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2.5 rounded-xl h-12 bg-primary/15 text-primary text-sm font-medium"
+                  onClick={() => { setShowLoginModal(true); setMobileOpen(false); }}
+                >
+                  <LogIn className="w-4 h-4" /> Sign in
+                </Button>
+              </>
             )}
           </div>
         </div>
