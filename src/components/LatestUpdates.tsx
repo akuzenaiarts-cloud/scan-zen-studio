@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { mockManga, Manga } from '@/data/mockManga';
 import TypeBadge from './TypeBadge';
 
@@ -25,25 +25,22 @@ export default function LatestUpdates() {
   return (
     <section>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-        <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-primary" />
-          <h2 className="text-xl font-bold">Latest Updates</h2>
-        </div>
+        <h2 className="text-2xl font-extrabold">Latest Updates</h2>
         <div className="flex items-center gap-2 flex-wrap">
           {FILTER_TABS.map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                 activeTab === tab
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                  ? 'bg-muted text-foreground'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
-              {tab === 'All Series' && '✓ '}{tab}
+              {activeTab === tab && tab === 'All Series' ? '✓ ' : ''}{tab}
             </button>
           ))}
-          <Link to="/latest" className="flex items-center gap-1 text-sm text-primary hover:underline ml-2">
+          <Link to="/latest" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground ml-2">
             View all <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
