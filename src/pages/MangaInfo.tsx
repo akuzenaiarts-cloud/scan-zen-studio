@@ -50,59 +50,51 @@ export default function MangaInfo() {
             <img
               src={manga.cover}
               alt={manga.title}
-              className="w-56 h-[320px] object-cover rounded-xl shrink-0 mx-auto sm:mx-0 shadow-lg"
+              className="w-64 h-[360px] object-cover rounded-xl shrink-0 mx-auto sm:mx-0 shadow-lg"
             />
             <div className="flex-1 space-y-3.5">
-              <h1 className="text-4xl sm:text-5xl font-bold leading-tight">{manga.title}</h1>
+              <h1 className="text-5xl sm:text-6xl font-bold leading-tight">{manga.title}</h1>
 
               <div>
-                <p className="text-sm text-muted-foreground font-medium">Alternative titles</p>
-                <p className="text-xs text-muted-foreground/70">—</p>
+                <p className="text-base text-muted-foreground font-medium italic">Alternative titles</p>
+                <p className="text-sm text-muted-foreground/70">—</p>
               </div>
 
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className={`px-3 py-1 rounded text-xs font-bold ${manga.status === 'Ongoing' ? 'bg-green-600 text-white' : manga.status === 'Completed' ? 'bg-blue-600 text-white' : 'bg-yellow-600 text-white'}`}>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className={`px-4 py-1.5 rounded-md text-sm font-bold ${manga.status === 'Ongoing' ? 'bg-green-600 text-white' : manga.status === 'Completed' ? 'bg-red-600 text-white' : 'bg-yellow-600 text-white'}`}>
                   {manga.status}
                 </span>
                 <TypeBadge type={manga.type} />
-                <span className="text-xs text-muted-foreground flex items-center gap-1">⏱ {manga.chapters[0]?.date || '4 days ago'}</span>
+                <span className="text-sm text-muted-foreground flex items-center gap-1">⏱ {manga.chapters[0]?.date || '4 days ago'}</span>
                 {manga.genres.slice(0, 4).map(g => (
-                  <span key={g} className="text-xs text-muted-foreground flex items-center gap-1">
-                    <span className="text-xs">📖</span> {g}
-                  </span>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap gap-1.5">
-                {manga.genres.map(g => (
-                  <span key={g} className="px-3 py-1 rounded-md bg-secondary border border-border text-xs font-medium text-foreground">
-                    {g}
+                  <span key={g} className="text-sm text-muted-foreground flex items-center gap-1">
+                    <span className="text-sm">📖</span> {g}
                   </span>
                 ))}
               </div>
 
               {/* Description */}
-              <div className="bg-secondary/60 rounded-lg p-5 text-sm leading-relaxed text-muted-foreground border border-border/50">
+              <div className="bg-secondary/60 rounded-lg p-6 text-base leading-relaxed text-muted-foreground border border-border/50">
                 {manga.description}
               </div>
 
               {/* Action Buttons */}
               <div className="flex items-center gap-0 mt-2">
                 <Link to={`/manga/${manga.slug}/chapter/1`} className="flex-1">
-                  <Button variant="secondary" className="w-full gap-2 rounded-none rounded-l-lg border border-border/50 h-12 text-sm font-medium">
-                    <Play className="w-4 h-4" /> Start Reading
+                  <Button variant="secondary" className="w-full gap-2 rounded-none rounded-l-lg border border-border/50 h-14 text-base font-medium">
+                    <Play className="w-5 h-5" /> Start Reading
                   </Button>
                 </Link>
                 <Link to={`/manga/${manga.slug}/chapter/${maxChapter}`} className="flex-1">
-                  <Button variant="secondary" className="w-full gap-2 rounded-none border-y border-r border-border/50 h-12 text-sm font-medium">
-                    <Play className="w-4 h-4" /> New Chapter
+                  <Button variant="secondary" className="w-full gap-2 rounded-none border-y border-r border-border/50 h-14 text-base font-medium">
+                    <Play className="w-5 h-5" /> New Chapter
                   </Button>
                 </Link>
-                <Button variant="secondary" className="flex-1 gap-2 rounded-none border-y border-r border-border/50 h-12 text-sm font-medium">
-                  <Plus className="w-4 h-4" /> Add to Library
+                <Button variant="secondary" className="flex-1 gap-2 rounded-none border-y border-r border-border/50 h-14 text-base font-medium">
+                  <Plus className="w-5 h-5" /> Add to Library
                 </Button>
-                <Button variant="secondary" className="rounded-none rounded-r-lg border-y border-r border-border/50 px-5 h-12">
-                  <Bell className="w-4 h-4" />
+                <Button variant="secondary" className="rounded-none rounded-r-lg border-y border-r border-border/50 px-5 h-14">
+                  <Bell className="w-5 h-5" />
                 </Button>
               </div>
             </div>
@@ -110,31 +102,31 @@ export default function MangaInfo() {
 
           {/* Share / Report / Discord Cards */}
           <div className="space-y-2.5">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/60 border border-border/50">
+            <div className="flex items-center justify-between p-5 rounded-xl bg-secondary/60 border border-border/50">
               <div>
-                <p className="text-sm font-semibold">Share Kayn Scan</p>
-                <p className="text-xs text-muted-foreground">to your friends</p>
+                <p className="text-base font-semibold">Share Kayn Scan</p>
+                <p className="text-sm text-muted-foreground">to your friends</p>
               </div>
-              <Button size="icon" className="rounded-full bg-primary h-9 w-9 shadow-md">
-                <Share2 className="w-4 h-4" />
+              <Button size="icon" className="rounded-full bg-primary h-11 w-11 shadow-md">
+                <Share2 className="w-5 h-5" />
               </Button>
             </div>
             <div className="flex gap-2.5">
-              <div className="flex-1 flex items-center justify-between p-3.5 rounded-xl bg-secondary/60 border border-border/50">
+              <div className="flex-1 flex items-center justify-between p-4 rounded-xl bg-secondary/60 border border-border/50">
                 <div>
-                  <p className="text-xs font-semibold">Facing an Issue?</p>
-                  <p className="text-[10px] text-muted-foreground">Let us know, and we'll help ASAP</p>
+                  <p className="text-sm font-semibold">Facing an Issue?</p>
+                  <p className="text-xs text-muted-foreground">Let us know, and we'll help ASAP</p>
                 </div>
-                <Button size="sm" variant="destructive" className="text-xs rounded-lg gap-1.5 h-8 px-3">
-                  <AlertCircle className="w-3 h-3" /> Report
+                <Button size="sm" variant="destructive" className="text-sm rounded-lg gap-1.5 h-9 px-4">
+                  <AlertCircle className="w-4 h-4" /> Report
                 </Button>
               </div>
-              <div className="flex-1 flex items-center justify-between p-3.5 rounded-xl bg-secondary/60 border border-border/50">
+              <div className="flex-1 flex items-center justify-between p-4 rounded-xl bg-secondary/60 border border-border/50">
                 <div>
-                  <p className="text-xs font-semibold">Join Our Socials</p>
-                  <p className="text-[10px] text-muted-foreground">to explore more</p>
+                  <p className="text-sm font-semibold">Join Our Socials</p>
+                  <p className="text-xs text-muted-foreground">to explore more</p>
                 </div>
-                <Button size="sm" className="text-xs rounded-lg gap-1.5 h-8 px-3 bg-[#5865F2] hover:bg-[#4752C4]">
+                <Button size="sm" className="text-sm rounded-lg gap-1.5 h-9 px-4 bg-[#5865F2] hover:bg-[#4752C4]">
                   Discord
                 </Button>
               </div>
