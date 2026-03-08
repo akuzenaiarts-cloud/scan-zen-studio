@@ -14,7 +14,7 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
-  const { isAuthenticated, user, logout, setShowLoginModal } = useAuth();
+  const { isAuthenticated, profile, logout, setShowLoginModal } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
