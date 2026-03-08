@@ -26,9 +26,9 @@ export default function EditorChoice() {
         <h2 className="font-bold text-4xl">Editor's Choice</h2>
       </div>
 
-      <div className="relative rounded-xl bg-card border border-border/40 md:pr-[560px]">
+      <div className="relative rounded-xl bg-card border border-border/40 md:pr-[660px]">
         {/* Floating Cover */}
-        <div className="hidden md:block absolute right-6 -top-6 w-[520px] h-[400px] rounded-2xl overflow-hidden border border-border/40 shadow-xl z-10">
+        <div className="hidden md:block absolute right-6 -top-8 w-[620px] h-[440px] rounded-2xl overflow-hidden border border-border/40 shadow-xl z-10">
           <img
             src={manga.banner || manga.cover}
             alt={manga.title}
