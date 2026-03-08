@@ -130,9 +130,7 @@ export default function ChapterReader() {
         </div>
       </header>
 
-      <div className="lg:flex">
-        {/* Main Reader Area */}
-        <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0">
           <div className="w-full px-2 sm:px-4 py-4 sm:py-8">
             {/* Pages */}
             <div className="space-y-2 sm:space-y-4 mb-6 sm:mb-8">
