@@ -51,8 +51,8 @@ export default function Navbar() {
             </button>
           ) : (
             <Link to="/" className="flex items-center gap-3 group" onClick={() => setMobileOpen(false)}>
-              <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center overflow-hidden group-hover:bg-primary/30 transition-colors duration-200">
-                <span className="text-primary font-bold text-base">K</span>
+              <div className="w-9 h-9 rounded-lg overflow-hidden">
+                <img src={logoImg} alt="Kayn Scan logo" className="w-full h-full object-contain" />
               </div>
               <span className="font-bold text-xl text-foreground tracking-tight">Kayn Scan</span>
             </Link>
