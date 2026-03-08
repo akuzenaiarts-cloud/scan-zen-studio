@@ -7,6 +7,7 @@ export interface Chapter {
   title: string;
   date: string;
   pages?: string[];
+  premium?: boolean;
 }
 
 export interface Comment {
