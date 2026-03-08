@@ -60,7 +60,7 @@ export default function MangaInfo() {
               className="w-64 h-[360px] object-cover rounded-xl shrink-0 mx-auto sm:mx-0 shadow-lg"
             />
             <div className="flex-1 space-y-3.5">
-              <h1 className="text-5xl sm:text-6xl font-bold leading-tight">{manga.title}</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold leading-tight">{manga.title}</h1>
 
               <div>
                 <p className="text-base text-muted-foreground font-medium italic">Alternative titles</p>
