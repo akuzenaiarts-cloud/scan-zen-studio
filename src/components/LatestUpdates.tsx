@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { mockManga, Manga } from '@/data/mockManga';
 import TypeBadge from './TypeBadge';
 
