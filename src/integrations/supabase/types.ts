@@ -59,9 +59,11 @@ export type Database = {
           author: string
           banner_url: string | null
           bookmarks: number | null
+          content_warnings: string[] | null
           cover_url: string
           created_at: string
           description: string
+          discord_webhook_url: string | null
           featured: boolean | null
           genres: string[] | null
           id: string
@@ -83,9 +85,11 @@ export type Database = {
           author: string
           banner_url?: string | null
           bookmarks?: number | null
+          content_warnings?: string[] | null
           cover_url: string
           created_at?: string
           description: string
+          discord_webhook_url?: string | null
           featured?: boolean | null
           genres?: string[] | null
           id?: string
@@ -107,9 +111,11 @@ export type Database = {
           author?: string
           banner_url?: string | null
           bookmarks?: number | null
+          content_warnings?: string[] | null
           cover_url?: string
           created_at?: string
           description?: string
+          discord_webhook_url?: string | null
           featured?: boolean | null
           genres?: string[] | null
           id?: string
