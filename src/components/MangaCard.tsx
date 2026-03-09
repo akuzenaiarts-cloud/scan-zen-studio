@@ -51,12 +51,14 @@ export default function MangaCard({ manga, rank, showChapters }: Props) {
               <span>{formatViews(manga.views)}</span>
             </div>
           </div>
-          {showChapters && manga.chapters.length > 0 && (
+          {showChapters && manga.chapters && manga.chapters.length > 0 && (
             <div className="mt-1.5 space-y-0.5">
               {manga.chapters.slice(0, 2).map(ch => (
                 <div key={ch.id} className="flex justify-between text-[11px]">
                   <span className="text-muted-foreground">Ch. {ch.number}</span>
-                  <span className="text-muted-foreground/60">{ch.date}</span>
+                  <span className="text-muted-foreground/60">
+                    {new Date(ch.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
                 </div>
               ))}
             </div>
