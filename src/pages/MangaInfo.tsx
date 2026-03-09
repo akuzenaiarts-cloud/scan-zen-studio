@@ -58,8 +58,23 @@ export default function MangaInfo() {
   const visibleChapters = expanded ? sortedChapters : sortedChapters.slice(0, 9);
   const maxChapter = manga.chapters.length > 0 ? Math.max(...manga.chapters.map(c => c.number)) : 0;
 
+  const handleWarningClose = (open: boolean) => {
+    if (!open) {
+      setWarningAcknowledged(true);
+    }
+    setShowWarning(open);
+  };
+
   return (
     <div className="w-full px-6 sm:px-10 lg:px-16 xl:px-24 py-6">
+      {manga && (manga as any).content_warnings && (manga as any).content_warnings.length > 0 && (
+        <ContentWarningDialog
+          open={showWarning}
+          onOpenChange={handleWarningClose}
+          warnings={(manga as any).content_warnings}
+          mangaTitle={manga.title}
+        />
+      )}
       <div className="flex flex-col xl:flex-row gap-6">
         {/* Main Content */}
         <div className="flex-1 min-w-0 space-y-3">
