@@ -510,6 +510,39 @@ export default function AdminPanel() {
           </div>
         )}
       </main>
+
+      <MangaFormModal
+        open={mangaFormOpen}
+        onOpenChange={handleMangaFormClose}
+        manga={editingManga || undefined}
+      />
+
+      <ChapterManager
+        open={chapterManagerOpen}
+        onOpenChange={setChapterManagerOpen}
+        manga={selectedManga}
+      />
+
+      <AlertDialog open={!!deleteMangaId} onOpenChange={() => setDeleteMangaId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Manga</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this manga? This will permanently delete
+              the series, all its chapters, and all associated images. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteManga}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
