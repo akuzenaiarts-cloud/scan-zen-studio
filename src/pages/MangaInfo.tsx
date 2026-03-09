@@ -33,6 +33,15 @@ export default function MangaInfo() {
     Object.fromEntries(REACTIONS.map(r => [r.label, 0]))
   );
   const [sortDesc, setSortDesc] = useState(true);
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningAcknowledged, setWarningAcknowledged] = useState(false);
+
+  // Check for content warnings on mount
+  useEffect(() => {
+    if (manga && (manga as any).content_warnings && (manga as any).content_warnings.length > 0 && !warningAcknowledged) {
+      setShowWarning(true);
+    }
+  }, [manga, warningAcknowledged]);
 
   if (!manga) {
     return (
