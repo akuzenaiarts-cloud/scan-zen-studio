@@ -286,7 +286,21 @@ export const MangaFormModal = ({ open, onOpenChange, manga }: MangaFormModalProp
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="alt_titles"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Alternative Titles (one per line)</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} rows={3} placeholder={"e.g.\n나 혼자만 레벨업\nSolo Leveling"} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+
                   <FormField
                     control={form.control}
                     name="type"
