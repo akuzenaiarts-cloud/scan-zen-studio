@@ -47,10 +47,7 @@ export const useComments = (mangaId: string | undefined) => {
         (profiles || []).forEach(p => { profilesMap[p.id] = p; });
       }
 
-      if (error) throw error;
-
       // Fetch admin roles for all comment users
-      const userIds = [...new Set((data || []).map(c => c.user_id))];
       let adminUserIds: string[] = [];
       if (userIds.length > 0) {
         const { data: roles } = await supabase
@@ -75,7 +72,7 @@ export const useComments = (mangaId: string | undefined) => {
         ...c,
         is_admin: adminUserIds.includes(c.user_id),
         user_has_liked: userLikes.includes(c.id),
-        profile: c.profile as { display_name: string | null; avatar_url: string | null } | null,
+        profile: profilesMap[c.user_id] || null,
       })) as CommentRow[];
 
       // Build tree: separate top-level and replies
