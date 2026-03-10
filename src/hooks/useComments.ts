@@ -1,0 +1,149 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+export interface CommentRow {
+  id: string;
+  manga_id: string;
+  chapter_id: string | null;
+  user_id: string;
+  parent_id: string | null;
+  text: string;
+  likes_count: number;
+  is_pinned: boolean;
+  created_at: string;
+  profile?: { display_name: string | null; avatar_url: string | null } | null;
+  is_admin?: boolean;
+  user_has_liked?: boolean;
+  replies?: CommentRow[];
+}
+
+export const useComments = (mangaId: string | undefined) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: comments = [], isLoading } = useQuery({
+    queryKey: ['comments', mangaId],
+    queryFn: async () => {
+      if (!mangaId) return [];
+
+      // Fetch all comments for this manga
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('manga_id', mangaId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch profiles for comment users
+      const userIds = [...new Set((data || []).map(c => c.user_id))];
+      let profilesMap: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, display_name, avatar_url')
+          .in('id', userIds);
+        (profiles || []).forEach(p => { profilesMap[p.id] = p; });
+      }
+
+      // Fetch admin roles for all comment users
+      let adminUserIds: string[] = [];
+      if (userIds.length > 0) {
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'admin')
+          .in('user_id', userIds);
+        adminUserIds = (roles || []).map(r => r.user_id);
+      }
+
+      // Fetch likes by current user
+      let userLikes: string[] = [];
+      if (user) {
+        const { data: likes } = await supabase
+          .from('comment_likes')
+          .select('comment_id')
+          .eq('user_id', user.id);
+        userLikes = (likes || []).map(l => l.comment_id);
+      }
+
+      const enriched = (data || []).map(c => ({
+        ...c,
+        is_admin: adminUserIds.includes(c.user_id),
+        user_has_liked: userLikes.includes(c.id),
+        profile: profilesMap[c.user_id] || null,
+      })) as CommentRow[];
+
+      // Build tree: separate top-level and replies
+      const topLevel = enriched.filter(c => !c.parent_id);
+      const replies = enriched.filter(c => c.parent_id);
+
+      topLevel.forEach(c => {
+        c.replies = replies
+          .filter(r => r.parent_id === c.id)
+          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      });
+
+      return topLevel;
+    },
+    enabled: !!mangaId,
+  });
+
+  const addComment = useMutation({
+    mutationFn: async ({ text, parentId }: { text: string; parentId?: string }) => {
+      if (!user || !mangaId) throw new Error('Not authenticated');
+      const { data, error } = await supabase
+        .from('comments')
+        .insert({
+          manga_id: mangaId,
+          user_id: user.id,
+          parent_id: parentId || null,
+          text,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+
+      // If replying, create notification for parent comment author
+      if (parentId) {
+        const parentComment = comments.find(c => c.id === parentId) ||
+          comments.flatMap(c => c.replies || []).find(r => r.id === parentId);
+        if (parentComment && parentComment.user_id !== user.id) {
+          await supabase.from('notifications').insert({
+            user_id: parentComment.user_id,
+            type: 'comment_reply' as any,
+            manga_id: mangaId,
+            comment_id: data.id,
+            title: 'New reply to your comment',
+            message: text.slice(0, 100),
+          });
+        }
+      }
+
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['comments', mangaId] }),
+  });
+
+  const toggleLike = useMutation({
+    mutationFn: async ({ commentId, hasLiked }: { commentId: string; hasLiked: boolean }) => {
+      if (!user) throw new Error('Not authenticated');
+      if (hasLiked) {
+        await supabase.from('comment_likes').delete().eq('comment_id', commentId).eq('user_id', user.id);
+      } else {
+        await supabase.from('comment_likes').insert({ comment_id: commentId, user_id: user.id });
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['comments', mangaId] }),
+  });
+
+  const togglePin = useMutation({
+    mutationFn: async ({ commentId, isPinned }: { commentId: string; isPinned: boolean }) => {
+      await supabase.from('comments').update({ is_pinned: !isPinned }).eq('id', commentId);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['comments', mangaId] }),
+  });
+
+  return { comments, isLoading, addComment, toggleLike, togglePin };
+};

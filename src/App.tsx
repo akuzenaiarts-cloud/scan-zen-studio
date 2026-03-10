@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Navbar from "@/components/Navbar";
@@ -25,9 +27,27 @@ const queryClient = new QueryClient();
 
 const AppLayout = () => {
   const location = useLocation();
+  const { settings } = useSiteSettings();
   const isChapterReader = /^\/manga\/[^/]+\/chapter\//.test(location.pathname);
   const isAdminPanel = location.pathname.startsWith('/admin');
   const hideShell = isChapterReader || isAdminPanel;
+
+  // Apply theme from settings
+  useEffect(() => {
+    const theme = (settings as any)?.theme;
+    if (theme?.primary) {
+      document.documentElement.style.setProperty('--primary', theme.primary);
+      document.documentElement.style.setProperty('--ring', theme.primary);
+    }
+    if (theme?.primaryDark) {
+      // Apply to dark mode via a class check
+      const isDark = document.documentElement.classList.contains('dark');
+      if (isDark) {
+        document.documentElement.style.setProperty('--primary', theme.primaryDark);
+        document.documentElement.style.setProperty('--ring', theme.primaryDark);
+      }
+    }
+  }, [settings]);
 
   return (
     <div className="min-h-screen flex flex-col">

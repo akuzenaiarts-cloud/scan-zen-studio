@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, Users, Settings, ArrowLeft, Plus, Search,
   Eye, Star, Bookmark, TrendingUp, Edit, Trash2, Shield, ChevronDown,
-  BarChart3, FileText, Bell, Globe, Upload, MoreHorizontal, List, Save, RotateCcw, Image
+  BarChart3, FileText, Bell, Globe, Upload, MoreHorizontal, List, Save, RotateCcw, Image,
+  Database, Palette, Link2, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ import { toast } from 'sonner';
 
 type Manga = Tables<"manga">;
 type Tab = 'overview' | 'manga' | 'users' | 'settings';
+type SettingsSubTab = 'general' | 'theme' | 'announcements' | 'upload' | 'storage';
 
 interface UserRow {
   id: string;
@@ -33,6 +35,25 @@ interface UserRow {
   avatar_url: string | null;
   created_at: string;
 }
+
+const THEME_PRESETS = [
+  { name: 'Purple Night', primary: '258 89% 66%', primaryDark: '255 91% 76%', accent: '269 100% 98%' },
+  { name: 'Ocean Blue', primary: '210 100% 50%', primaryDark: '210 100% 65%', accent: '210 100% 95%' },
+  { name: 'Forest Green', primary: '142 71% 45%', primaryDark: '142 71% 55%', accent: '142 71% 95%' },
+  { name: 'Crimson', primary: '0 84% 55%', primaryDark: '0 84% 65%', accent: '0 100% 96%' },
+  { name: 'Amber Gold', primary: '38 92% 50%', primaryDark: '38 92% 60%', accent: '38 92% 95%' },
+  { name: 'Teal', primary: '175 80% 40%', primaryDark: '175 80% 55%', accent: '175 80% 95%' },
+];
+
+// Helper to upload file to storage
+const uploadToStorage = async (file: File, path: string): Promise<string> => {
+  const ext = file.name.split('.').pop();
+  const fileName = `${path}.${ext}`;
+  const { error } = await supabase.storage.from('manga-assets').upload(fileName, file, { upsert: true });
+  if (error) throw error;
+  const { data: { publicUrl } } = supabase.storage.from('manga-assets').getPublicUrl(fileName);
+  return publicUrl;
+};
 
 export default function AdminPanel() {
   const navigate = useNavigate();
@@ -44,6 +65,7 @@ export default function AdminPanel() {
   const { settings, updateSettings } = useSiteSettings();
 
   const [activeTab, setActiveTab] = useState<Tab>((searchParams.get('tab') as Tab) || 'overview');
+  const [settingsSubTab, setSettingsSubTab] = useState<SettingsSubTab>('general');
   const [users, setUsers] = useState<UserRow[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [mangaSearch, setMangaSearch] = useState('');
@@ -54,6 +76,7 @@ export default function AdminPanel() {
   const [chapterManagerOpen, setChapterManagerOpen] = useState(false);
   const [selectedManga, setSelectedManga] = useState<Manga | null>(null);
   const [deleteMangaId, setDeleteMangaId] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
 
   // Settings form state
   const [settingsForm, setSettingsForm] = useState({
@@ -61,23 +84,40 @@ export default function AdminPanel() {
     site_description: '',
     footer_text: '',
     footer_tagline: '',
+    logo_url: '',
     announcement_message: '',
+    announcement_button_text: '',
+    announcement_button_url: '',
     max_size_mb: 10,
     allowed_formats: 'jpg, png, webp',
+    storage_provider: 'supabase',
+    blogger_blog_id: '',
+    blogger_api_key: '',
+    theme_preset: 'Purple Night',
+    custom_primary_hsl: '',
   });
 
   // Load settings into form
   useEffect(() => {
     if (settings) {
-      setSettingsForm({
+      setSettingsForm(prev => ({
+        ...prev,
         site_name: settings.general.site_name,
         site_description: settings.general.site_description,
         footer_text: settings.general.footer_text,
         footer_tagline: settings.general.footer_tagline,
+        logo_url: settings.general.logo_url || '',
         announcement_message: settings.announcements.message,
+        announcement_button_text: (settings.announcements as any).button_text || '',
+        announcement_button_url: (settings.announcements as any).button_url || '',
         max_size_mb: settings.upload.max_size_mb,
         allowed_formats: settings.upload.allowed_formats,
-      });
+        storage_provider: (settings as any).storage?.provider || 'supabase',
+        blogger_blog_id: (settings as any).storage?.blogger_blog_id || '',
+        blogger_api_key: (settings as any).storage?.blogger_api_key || '',
+        theme_preset: (settings as any).theme?.preset || 'Purple Night',
+        custom_primary_hsl: (settings as any).theme?.custom_primary_hsl || '',
+      }));
     }
   }, [settings]);
 
@@ -117,6 +157,14 @@ export default function AdminPanel() {
     { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
   ];
 
+  const settingsSubTabs: { id: SettingsSubTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'general', label: 'General', icon: <Globe className="w-3.5 h-3.5" /> },
+    { id: 'theme', label: 'Theme', icon: <Palette className="w-3.5 h-3.5" /> },
+    { id: 'announcements', label: 'Announcements', icon: <Bell className="w-3.5 h-3.5" /> },
+    { id: 'upload', label: 'Upload', icon: <Upload className="w-3.5 h-3.5" /> },
+    { id: 'storage', label: 'Storage', icon: <Database className="w-3.5 h-3.5" /> },
+  ];
+
   const filteredManga = supabaseManga.filter(m =>
     m.title.toLowerCase().includes(mangaSearch.toLowerCase())
   );
@@ -141,8 +189,24 @@ export default function AdminPanel() {
 
   const handleMangaFormClose = () => { setMangaFormOpen(false); setEditingManga(null); };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    try {
+      const url = await uploadToStorage(file, `site/logo-${Date.now()}`);
+      setSettingsForm(s => ({ ...s, logo_url: url }));
+      toast.success('Logo uploaded! Click Save to apply.');
+    } catch (err: any) {
+      toast.error(`Logo upload failed: ${err.message}`);
+    }
+    setLogoUploading(false);
+  };
+
   const handleSaveSettings = async () => {
     try {
+      const selectedPreset = THEME_PRESETS.find(t => t.name === settingsForm.theme_preset);
+      
       await Promise.all([
         updateSettings.mutateAsync({
           key: 'general',
@@ -151,18 +215,46 @@ export default function AdminPanel() {
             site_description: settingsForm.site_description,
             footer_text: settingsForm.footer_text,
             footer_tagline: settingsForm.footer_tagline,
-            logo_url: settings.general.logo_url,
+            logo_url: settingsForm.logo_url,
           },
         }),
         updateSettings.mutateAsync({
           key: 'announcements',
-          value: { message: settingsForm.announcement_message },
+          value: {
+            message: settingsForm.announcement_message,
+            button_text: settingsForm.announcement_button_text,
+            button_url: settingsForm.announcement_button_url,
+          },
         }),
         updateSettings.mutateAsync({
           key: 'upload',
           value: { max_size_mb: settingsForm.max_size_mb, allowed_formats: settingsForm.allowed_formats },
         }),
+        updateSettings.mutateAsync({
+          key: 'storage',
+          value: {
+            provider: settingsForm.storage_provider,
+            blogger_blog_id: settingsForm.blogger_blog_id,
+            blogger_api_key: settingsForm.blogger_api_key,
+          },
+        }),
+        updateSettings.mutateAsync({
+          key: 'theme',
+          value: {
+            preset: settingsForm.theme_preset,
+            custom_primary_hsl: settingsForm.custom_primary_hsl,
+            primary: settingsForm.custom_primary_hsl || selectedPreset?.primary || '258 89% 66%',
+            primaryDark: selectedPreset?.primaryDark || '255 91% 76%',
+          },
+        }),
       ]);
+
+      // Apply theme immediately
+      const primaryHsl = settingsForm.custom_primary_hsl || selectedPreset?.primary || '258 89% 66%';
+      const primaryDarkHsl = selectedPreset?.primaryDark || '255 91% 76%';
+      document.documentElement.style.setProperty('--primary', primaryHsl);
+      document.documentElement.style.setProperty('--ring', primaryHsl);
+
       toast.success('Settings saved successfully');
     } catch {
       toast.error('Failed to save settings');
@@ -176,9 +268,17 @@ export default function AdminPanel() {
         site_description: settings.general.site_description,
         footer_text: settings.general.footer_text,
         footer_tagline: settings.general.footer_tagline,
+        logo_url: settings.general.logo_url || '',
         announcement_message: settings.announcements.message,
+        announcement_button_text: (settings.announcements as any).button_text || '',
+        announcement_button_url: (settings.announcements as any).button_url || '',
         max_size_mb: settings.upload.max_size_mb,
         allowed_formats: settings.upload.allowed_formats,
+        storage_provider: (settings as any).storage?.provider || 'supabase',
+        blogger_blog_id: (settings as any).storage?.blogger_blog_id || '',
+        blogger_api_key: (settings as any).storage?.blogger_api_key || '',
+        theme_preset: (settings as any).theme?.preset || 'Purple Night',
+        custom_primary_hsl: (settings as any).theme?.custom_primary_hsl || '',
       });
     }
   };
@@ -314,7 +414,6 @@ export default function AdminPanel() {
               <Input placeholder="Search series..." value={mangaSearch} onChange={e => setMangaSearch(e.target.value)} className="pl-9 rounded-xl bg-card border-border" />
             </div>
 
-            {/* Card Grid Layout */}
             {mangaLoading ? (
               <div className="text-center py-12 text-muted-foreground text-sm">Loading manga...</div>
             ) : filteredManga.length === 0 ? (
@@ -325,7 +424,6 @@ export default function AdminPanel() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredManga.map(m => (
                   <div key={m.id} className="bg-card border border-border rounded-2xl overflow-hidden group hover:border-primary/30 transition-colors">
-                    {/* Cover */}
                     <div className="relative aspect-[3/4] bg-muted overflow-hidden">
                       {m.cover_url ? (
                         <img src={m.cover_url} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -334,7 +432,6 @@ export default function AdminPanel() {
                           <Image className="w-8 h-8 text-muted-foreground" />
                         </div>
                       )}
-                      {/* Badges overlay */}
                       <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
                         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize ${m.type === 'manhwa' ? 'bg-blue-500/90 text-white' : m.type === 'manga' ? 'bg-red-500/90 text-white' : 'bg-emerald-500/90 text-white'}`}>
                           {m.type}
@@ -343,7 +440,6 @@ export default function AdminPanel() {
                           {m.status}
                         </span>
                       </div>
-                      {/* Flags */}
                       <div className="absolute top-2 right-2 flex gap-1">
                         {m.pinned && <span className="text-xs bg-background/80 rounded px-1">📌</span>}
                         {m.featured && <span className="text-xs bg-background/80 rounded px-1">⭐</span>}
@@ -351,7 +447,6 @@ export default function AdminPanel() {
                         {m.premium && <span className="text-xs bg-amber-500/80 text-white rounded px-1">P</span>}
                       </div>
                     </div>
-                    {/* Info */}
                     <div className="p-3 space-y-2">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold truncate" title={m.title}>{m.title}</p>
@@ -361,7 +456,6 @@ export default function AdminPanel() {
                         <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{formatViews(m.views || 0)}</span>
                         <span className="flex items-center gap-1"><Bookmark className="w-3 h-3" />{formatViews(m.bookmarks || 0)}</span>
                       </div>
-                      {/* Actions */}
                       <div className="flex items-center gap-1 pt-1 border-t border-border/50">
                         <Button variant="ghost" size="sm" className="h-8 rounded-lg hover:bg-muted text-xs gap-1 flex-1" onClick={() => handleManageChapters(m)}>
                           <List className="w-3.5 h-3.5" /> Chapters
@@ -431,76 +525,251 @@ export default function AdminPanel() {
               <p className="text-muted-foreground text-sm mt-1">Configure your platform.</p>
             </div>
 
-            {/* General — shows current values */}
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-              <h3 className="font-semibold flex items-center gap-2"><Globe className="w-4 h-4" /> Basic Site Details</h3>
-              <div className="flex items-center gap-4 p-3 bg-muted/30 rounded-xl">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
-                  {settings.general.logo_url ? (
-                    <img src={settings.general.logo_url} alt="Logo" className="w-full h-full object-contain" />
-                  ) : (
-                    <Image className="w-5 h-5 text-primary" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold truncate">{settings.general.site_name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{settings.general.site_description}</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Site Name</label>
-                  <Input value={settingsForm.site_name} onChange={e => setSettingsForm(s => ({ ...s, site_name: e.target.value }))} className="rounded-xl bg-background" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Site Description</label>
-                  <Input value={settingsForm.site_description} onChange={e => setSettingsForm(s => ({ ...s, site_description: e.target.value }))} className="rounded-xl bg-background" />
-                </div>
-              </div>
+            {/* Settings sub-tabs */}
+            <div className="flex gap-1.5 flex-wrap bg-muted/30 rounded-xl p-1.5">
+              {settingsSubTabs.map(st => (
+                <button
+                  key={st.id}
+                  onClick={() => setSettingsSubTab(st.id)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    settingsSubTab === st.id ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {st.icon} {st.label}
+                </button>
+              ))}
             </div>
 
-            {/* Footer */}
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-              <h3 className="font-semibold flex items-center gap-2"><FileText className="w-4 h-4" /> Footer</h3>
-              <div className="p-3 bg-muted/30 rounded-xl">
-                <p className="text-sm font-medium">{settings.general.footer_text || 'Not set'}</p>
-                <p className="text-xs text-muted-foreground">{settings.general.footer_tagline || 'No tagline'}</p>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Footer Text</label>
-                  <Input value={settingsForm.footer_text} onChange={e => setSettingsForm(s => ({ ...s, footer_text: e.target.value }))} className="rounded-xl bg-background" placeholder="e.g. Kayn Scan" />
+            {/* General */}
+            {settingsSubTab === 'general' && (
+              <div className="space-y-4">
+                <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+                  <h3 className="font-semibold flex items-center gap-2"><Globe className="w-4 h-4" /> Basic Site Details</h3>
+                  <div className="flex items-center gap-4 p-3 bg-muted/30 rounded-xl">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
+                      {settingsForm.logo_url ? (
+                        <img src={settingsForm.logo_url} alt="Logo" className="w-full h-full object-contain" />
+                      ) : (
+                        <Image className="w-5 h-5 text-primary" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold truncate">{settingsForm.site_name || 'Not set'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{settingsForm.site_description || 'No description'}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Site Logo</label>
+                      <div className="flex items-center gap-3">
+                        {settingsForm.logo_url && (
+                          <img src={settingsForm.logo_url} alt="Current logo" className="w-10 h-10 rounded-lg object-contain bg-muted" />
+                        )}
+                        <label className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-background cursor-pointer hover:bg-muted/50 transition-colors text-sm">
+                          <Upload className="w-4 h-4" /> {logoUploading ? 'Uploading...' : 'Upload Logo'}
+                          <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={logoUploading} />
+                        </label>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Site Name</label>
+                      <Input value={settingsForm.site_name} onChange={e => setSettingsForm(s => ({ ...s, site_name: e.target.value }))} className="rounded-xl bg-background" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Site Description</label>
+                      <Input value={settingsForm.site_description} onChange={e => setSettingsForm(s => ({ ...s, site_description: e.target.value }))} className="rounded-xl bg-background" />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Footer Tagline</label>
-                  <Input value={settingsForm.footer_tagline} onChange={e => setSettingsForm(s => ({ ...s, footer_tagline: e.target.value }))} className="rounded-xl bg-background" placeholder="e.g. Your gateway to manga" />
+
+                {/* Footer */}
+                <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+                  <h3 className="font-semibold flex items-center gap-2"><FileText className="w-4 h-4" /> Footer</h3>
+                  <div className="p-3 bg-muted/30 rounded-xl">
+                    <p className="text-sm font-medium">{settingsForm.footer_text || 'Not set'}</p>
+                    <p className="text-xs text-muted-foreground">{settingsForm.footer_tagline || 'No tagline'}</p>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Footer Text</label>
+                      <Input value={settingsForm.footer_text} onChange={e => setSettingsForm(s => ({ ...s, footer_text: e.target.value }))} className="rounded-xl bg-background" placeholder="e.g. Kayn Scan" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Footer Tagline</label>
+                      <Input value={settingsForm.footer_tagline} onChange={e => setSettingsForm(s => ({ ...s, footer_tagline: e.target.value }))} className="rounded-xl bg-background" placeholder="e.g. Your gateway to manga" />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Theme */}
+            {settingsSubTab === 'theme' && (
+              <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+                <h3 className="font-semibold flex items-center gap-2"><Palette className="w-4 h-4" /> Smart Theme</h3>
+                <p className="text-sm text-muted-foreground">Choose a preset color theme or customize your own.</p>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {THEME_PRESETS.map(preset => (
+                    <button
+                      key={preset.name}
+                      onClick={() => setSettingsForm(s => ({ ...s, theme_preset: preset.name, custom_primary_hsl: '' }))}
+                      className={`p-3 rounded-xl border-2 transition-all text-left ${
+                        settingsForm.theme_preset === preset.name && !settingsForm.custom_primary_hsl
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 rounded-full" style={{ background: `hsl(${preset.primary})` }} />
+                        <div className="w-4 h-4 rounded-full" style={{ background: `hsl(${preset.primaryDark})` }} />
+                      </div>
+                      <p className="text-xs font-semibold">{preset.name}</p>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="pt-2 border-t border-border">
+                  <label className="text-sm font-medium mb-1 block">Custom Primary Color (HSL)</label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      value={settingsForm.custom_primary_hsl}
+                      onChange={e => setSettingsForm(s => ({ ...s, custom_primary_hsl: e.target.value }))}
+                      className="rounded-xl bg-background"
+                      placeholder="e.g. 258 89% 66%"
+                    />
+                    {settingsForm.custom_primary_hsl && (
+                      <div className="w-8 h-8 rounded-lg shrink-0" style={{ background: `hsl(${settingsForm.custom_primary_hsl})` }} />
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty to use the selected preset.</p>
+                </div>
+              </div>
+            )}
 
             {/* Announcements */}
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-              <h3 className="font-semibold flex items-center gap-2"><Bell className="w-4 h-4" /> Announcements</h3>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Announcement Bar Message</label>
-                <Input value={settingsForm.announcement_message} onChange={e => setSettingsForm(s => ({ ...s, announcement_message: e.target.value }))} placeholder="Leave empty to hide the announcement bar" className="rounded-xl bg-background" />
+            {settingsSubTab === 'announcements' && (
+              <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+                <h3 className="font-semibold flex items-center gap-2"><Bell className="w-4 h-4" /> Announcement Bar</h3>
+                <p className="text-sm text-muted-foreground">
+                  This message will be displayed on the homepage. Leave empty to hide.
+                </p>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Message</label>
+                  <Textarea
+                    value={settingsForm.announcement_message}
+                    onChange={e => setSettingsForm(s => ({ ...s, announcement_message: e.target.value }))}
+                    placeholder="Write your announcement..."
+                    className="rounded-xl bg-background min-h-[80px] resize-none"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Button Text (optional)</label>
+                    <Input
+                      value={settingsForm.announcement_button_text}
+                      onChange={e => setSettingsForm(s => ({ ...s, announcement_button_text: e.target.value }))}
+                      className="rounded-xl bg-background"
+                      placeholder="e.g. Learn More"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Button URL (optional)</label>
+                    <Input
+                      value={settingsForm.announcement_button_url}
+                      onChange={e => setSettingsForm(s => ({ ...s, announcement_button_url: e.target.value }))}
+                      className="rounded-xl bg-background"
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+                {settingsForm.announcement_message && (
+                  <div className="p-3 bg-muted/30 rounded-xl border border-border/50">
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">Preview:</p>
+                    <p className="text-sm">{settingsForm.announcement_message}</p>
+                    {settingsForm.announcement_button_text && (
+                      <span className="inline-flex items-center gap-1 mt-2 text-xs text-primary font-medium">
+                        <ExternalLink className="w-3 h-3" /> {settingsForm.announcement_button_text}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             {/* Upload */}
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-              <h3 className="font-semibold flex items-center gap-2"><Upload className="w-4 h-4" /> Upload Settings</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Max Upload Size (MB)</label>
-                  <Input type="number" value={settingsForm.max_size_mb} onChange={e => setSettingsForm(s => ({ ...s, max_size_mb: parseInt(e.target.value) || 10 }))} className="rounded-xl bg-background w-32" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Allowed Image Formats</label>
-                  <Input value={settingsForm.allowed_formats} onChange={e => setSettingsForm(s => ({ ...s, allowed_formats: e.target.value }))} className="rounded-xl bg-background" />
+            {settingsSubTab === 'upload' && (
+              <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+                <h3 className="font-semibold flex items-center gap-2"><Upload className="w-4 h-4" /> Upload Settings</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Max Upload Size (MB)</label>
+                    <Input type="number" value={settingsForm.max_size_mb} onChange={e => setSettingsForm(s => ({ ...s, max_size_mb: parseInt(e.target.value) || 10 }))} className="rounded-xl bg-background w-32" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Allowed Image Formats</label>
+                    <Input value={settingsForm.allowed_formats} onChange={e => setSettingsForm(s => ({ ...s, allowed_formats: e.target.value }))} className="rounded-xl bg-background" />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Storage */}
+            {settingsSubTab === 'storage' && (
+              <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+                <h3 className="font-semibold flex items-center gap-2"><Database className="w-4 h-4" /> Storage Provider</h3>
+                <p className="text-sm text-muted-foreground">
+                  Choose where to store uploaded images. Blogger uses Google's CDN for free unlimited image hosting.
+                </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: 'supabase', label: 'Supabase Storage', desc: 'Default storage (limited by plan)' },
+                    { id: 'blogger', label: 'Blogger CDN', desc: 'Free unlimited via Google CDN' },
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setSettingsForm(s => ({ ...s, storage_provider: opt.id }))}
+                      className={`p-4 rounded-xl border-2 text-left transition-all ${
+                        settingsForm.storage_provider === opt.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/30'
+                      }`}
+                    >
+                      <p className="text-sm font-semibold">{opt.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+                    </button>
+                  ))}
+                </div>
+
+                {settingsForm.storage_provider === 'blogger' && (
+                  <div className="space-y-3 pt-2 border-t border-border">
+                    <p className="text-xs text-muted-foreground">
+                      Create a Blogger blog for image hosting, then enter your Blog ID and API key below.
+                    </p>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Blog ID</label>
+                      <Input
+                        value={settingsForm.blogger_blog_id}
+                        onChange={e => setSettingsForm(s => ({ ...s, blogger_blog_id: e.target.value }))}
+                        className="rounded-xl bg-background"
+                        placeholder="e.g. 1234567890"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Blogger API Key / OAuth Token</label>
+                      <Input
+                        type="password"
+                        value={settingsForm.blogger_api_key}
+                        onChange={e => setSettingsForm(s => ({ ...s, blogger_api_key: e.target.value }))}
+                        className="rounded-xl bg-background"
+                        placeholder="Your API key or OAuth access token"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Button className="rounded-xl gap-2" onClick={handleSaveSettings} disabled={updateSettings.isPending}>

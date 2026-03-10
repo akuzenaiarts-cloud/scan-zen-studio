@@ -52,6 +52,93 @@ export type Database = {
           },
         ]
       }
+      comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comments: {
+        Row: {
+          chapter_id: string | null
+          created_at: string
+          id: string
+          is_pinned: boolean | null
+          likes_count: number | null
+          manga_id: string
+          parent_id: string | null
+          text: string
+          user_id: string
+        }
+        Insert: {
+          chapter_id?: string | null
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          likes_count?: number | null
+          manga_id: string
+          parent_id?: string | null
+          text: string
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string | null
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          likes_count?: number | null
+          manga_id?: string
+          parent_id?: string | null
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_manga_id_fkey"
+            columns: ["manga_id"]
+            isOneToOne: false
+            referencedRelation: "manga"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manga: {
         Row: {
           alt_titles: string[] | null
@@ -145,6 +232,92 @@ export type Database = {
         }
         Relationships: []
       }
+      manga_subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          manga_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manga_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manga_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manga_subscriptions_manga_id_fkey"
+            columns: ["manga_id"]
+            isOneToOne: false
+            referencedRelation: "manga"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          chapter_id: string | null
+          comment_id: string | null
+          created_at: string
+          id: string
+          is_premium: boolean | null
+          is_read: boolean | null
+          manga_id: string | null
+          message: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          chapter_id?: string | null
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          is_premium?: boolean | null
+          is_read?: boolean | null
+          manga_id?: string | null
+          message?: string
+          title?: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string | null
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          is_premium?: boolean | null
+          is_read?: boolean | null
+          manga_id?: string | null
+          message?: string
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_manga_id_fkey"
+            columns: ["manga_id"]
+            isOneToOne: false
+            referencedRelation: "manga"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -217,6 +390,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      notification_type: "chapter_update" | "comment_reply"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -345,6 +519,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      notification_type: ["chapter_update", "comment_reply"],
     },
   },
 } as const

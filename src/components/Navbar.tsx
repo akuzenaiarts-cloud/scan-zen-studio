@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, LayoutGrid, LogIn, ClipboardList, ArrowLeft, Bell, Moon, Sun } from 'lucide-react';
+import { Search, Menu, X, LayoutGrid, LogIn, ClipboardList, ArrowLeft, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import SearchModal from './SearchModal';
 import UserMenu from './UserMenu';
+import NotificationMenu from './NotificationMenu';
 import logoImg from '@/assets/logo.png';
 
 const NAV_LINKS = [
@@ -72,10 +73,7 @@ export default function Navbar() {
               </Link>
             ))}
             <div className="w-px h-6 bg-border/60 mx-1" />
-            <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted transition-all duration-200 hover:scale-[1.05] relative">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
-            </Button>
+            <NotificationMenu />
             {!isAuthenticated && (
               <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted transition-all duration-200 hover:scale-[1.05]" onClick={toggleTheme}>
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -93,10 +91,7 @@ export default function Navbar() {
 
           {/* Mobile actions */}
           <div className="flex items-center gap-1.5 md:hidden">
-            <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 bg-muted/60 hover:bg-muted relative">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
-            </Button>
+            <NotificationMenu />
             {isAuthenticated ? (
               <UserMenu />
             ) : (

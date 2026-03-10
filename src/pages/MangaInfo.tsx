@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Play, Plus, Bell, Share2, AlertCircle, ChevronDown, ArrowDownNarrowWide } from 'lucide-react';
+import { Play, Plus, Bell, BellOff, Share2, AlertCircle, ChevronDown, ArrowDownNarrowWide } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMangaBySlug, useMangaChapters } from '@/hooks/useMangaBySlug';
 import { useAllManga } from '@/hooks/useAllManga';
+import { useMangaSubscription } from '@/hooks/useNotifications';
+import { useAuth } from '@/contexts/AuthContext';
 import TypeBadge from '@/components/TypeBadge';
 import TypeFlag from '@/components/TypeFlag';
 import CommentSection from '@/components/CommentSection';
 import { ContentWarningDialog } from '@/components/ContentWarningDialog';
+import { toast } from 'sonner';
 
 const GENRE_EMOJI: Record<string, string> = {
   Action: '⚔️', Fantasy: '🔮', Adventure: '🧭', Drama: '🎲', Romance: '❤️',
@@ -29,6 +32,8 @@ export default function MangaInfo() {
   const { slug } = useParams<{ slug: string }>();
   const { data: manga, isLoading } = useMangaBySlug(slug || '');
   const { data: chapters = [] } = useMangaChapters(manga?.id);
+  const { isAuthenticated, setShowLoginModal } = useAuth();
+  const { isSubscribed, toggleSubscription } = useMangaSubscription(manga?.id);
   const { data: allManga = [] } = useAllManga();
   const trending = allManga.filter(m => m.trending).slice(0, 8);
   const [expanded, setExpanded] = useState(false);
@@ -148,8 +153,16 @@ export default function MangaInfo() {
                 <Button variant="secondary" className="gap-2 rounded-lg bg-muted/60 border border-border/40 hover:bg-muted h-11 px-5 text-sm font-semibold text-foreground">
                   <Plus className="w-4 h-4" /> Add to Library
                 </Button>
-                <Button variant="secondary" className="rounded-lg bg-muted/60 border border-border/40 hover:bg-muted px-3.5 h-11 text-foreground">
-                  <Bell className="w-4 h-4" />
+                <Button
+                  variant="secondary"
+                  className={`rounded-lg border border-border/40 hover:bg-muted px-3.5 h-11 ${isSubscribed ? 'bg-primary/15 text-primary border-primary/30' : 'bg-muted/60 text-foreground'}`}
+                  onClick={() => {
+                    if (!isAuthenticated) { setShowLoginModal(true); return; }
+                    toggleSubscription.mutate();
+                    toast.success(isSubscribed ? 'Notifications disabled' : 'Notifications enabled');
+                  }}
+                >
+                  {isSubscribed ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
                 </Button>
               </div>
             </div>
@@ -268,7 +281,7 @@ export default function MangaInfo() {
           </div>
 
           {/* Comments */}
-          <CommentSection comments={[]} />
+          <CommentSection mangaId={manga.id} />
         </div>
 
         {/* Trending Sidebar */}
