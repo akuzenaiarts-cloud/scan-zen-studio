@@ -85,6 +85,8 @@ export default function AdminPanel() {
     footer_text: '',
     footer_tagline: '',
     logo_url: '',
+    discord_url: '',
+    patreon_url: '',
     announcement_message: '',
     announcement_button_text: '',
     announcement_button_url: '',
