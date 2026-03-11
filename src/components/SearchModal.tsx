@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, X, ArrowRight } from 'lucide-react';
+import { Search, ArrowRight } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useAllManga } from '@/hooks/useAllManga';
@@ -26,7 +26,7 @@ export default function SearchModal({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl p-0 gap-0 bg-card border-border rounded-2xl overflow-hidden">
+      <DialogContent className="sm:max-w-2xl p-0 gap-0 bg-card border-border rounded-2xl overflow-hidden [&>button:last-child]:hidden">
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 border-b border-border">
           <Search className="w-5 h-5 text-muted-foreground" />
@@ -37,9 +37,6 @@ export default function SearchModal({ open, onClose }: Props) {
             onChange={e => setQuery(e.target.value)}
             autoFocus
           />
-          <button onClick={onClose}>
-            <X className="w-5 h-5 text-muted-foreground hover:text-foreground" />
-          </button>
         </div>
 
         {/* Results grid */}

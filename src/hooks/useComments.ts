@@ -27,7 +27,6 @@ export const useComments = (mangaId: string | undefined) => {
     queryFn: async () => {
       if (!mangaId) return [];
 
-      // Fetch all comments for this manga
       const { data, error } = await supabase
         .from('comments')
         .select('*')
@@ -36,7 +35,6 @@ export const useComments = (mangaId: string | undefined) => {
 
       if (error) throw error;
 
-      // Fetch profiles for comment users
       const userIds = [...new Set((data || []).map(c => c.user_id))];
       let profilesMap: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
       if (userIds.length > 0) {
@@ -47,7 +45,6 @@ export const useComments = (mangaId: string | undefined) => {
         (profiles || []).forEach(p => { profilesMap[p.id] = p; });
       }
 
-      // Fetch admin roles for all comment users
       let adminUserIds: string[] = [];
       if (userIds.length > 0) {
         const { data: roles } = await supabase
@@ -58,7 +55,6 @@ export const useComments = (mangaId: string | undefined) => {
         adminUserIds = (roles || []).map(r => r.user_id);
       }
 
-      // Fetch likes by current user
       let userLikes: string[] = [];
       if (user) {
         const { data: likes } = await supabase
@@ -75,7 +71,6 @@ export const useComments = (mangaId: string | undefined) => {
         profile: profilesMap[c.user_id] || null,
       })) as CommentRow[];
 
-      // Build tree: separate top-level and replies
       const topLevel = enriched.filter(c => !c.parent_id);
       const replies = enriched.filter(c => c.parent_id);
 
@@ -91,7 +86,7 @@ export const useComments = (mangaId: string | undefined) => {
   });
 
   const addComment = useMutation({
-    mutationFn: async ({ text, parentId }: { text: string; parentId?: string }) => {
+    mutationFn: async ({ text, parentId, mentions }: { text: string; parentId?: string; mentions?: string[] }) => {
       if (!user || !mangaId) throw new Error('Not authenticated');
       const { data, error } = await supabase
         .from('comments')
@@ -121,7 +116,54 @@ export const useComments = (mangaId: string | undefined) => {
         }
       }
 
+      // Handle @mentions - create notifications for mentioned users
+      if (mentions && mentions.length > 0) {
+        const { data: mentionedProfiles } = await supabase
+          .from('profiles')
+          .select('id, display_name')
+          .in('display_name', mentions);
+
+        if (mentionedProfiles) {
+          const notifications = mentionedProfiles
+            .filter(p => p.id !== user.id) // Don't notify yourself
+            .map(p => ({
+              user_id: p.id,
+              type: 'comment_reply' as any,
+              manga_id: mangaId,
+              comment_id: data.id,
+              title: `${user.user_metadata?.full_name || 'Someone'} mentioned you`,
+              message: text.slice(0, 100),
+            }));
+
+          if (notifications.length > 0) {
+            await supabase.from('notifications').insert(notifications);
+          }
+        }
+      }
+
       return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['comments', mangaId] }),
+  });
+
+  const editComment = useMutation({
+    mutationFn: async ({ commentId, text }: { commentId: string; text: string }) => {
+      const { error } = await supabase
+        .from('comments')
+        .update({ text })
+        .eq('id', commentId);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['comments', mangaId] }),
+  });
+
+  const deleteComment = useMutation({
+    mutationFn: async (commentId: string) => {
+      const { error } = await supabase
+        .from('comments')
+        .delete()
+        .eq('id', commentId);
+      if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['comments', mangaId] }),
   });
@@ -145,5 +187,5 @@ export const useComments = (mangaId: string | undefined) => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['comments', mangaId] }),
   });
 
-  return { comments, isLoading, addComment, toggleLike, togglePin };
+  return { comments, isLoading, addComment, toggleLike, togglePin, editComment, deleteComment };
 };
