@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import LoginModal from "@/components/LoginModal";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import MangaInfo from "./pages/MangaInfo";
 import ChapterReader from "./pages/ChapterReader";
@@ -24,6 +25,15 @@ import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Scroll to top on route change
+function ScrollToTopOnNavigate() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 const AppLayout = () => {
   const location = useLocation();
@@ -40,7 +50,6 @@ const AppLayout = () => {
       document.documentElement.style.setProperty('--ring', theme.primary);
     }
     if (theme?.primaryDark) {
-      // Apply to dark mode via a class check
       const isDark = document.documentElement.classList.contains('dark');
       if (isDark) {
         document.documentElement.style.setProperty('--primary', theme.primaryDark);
@@ -51,6 +60,7 @@ const AppLayout = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <ScrollToTopOnNavigate />
       {!hideShell && <Navbar />}
       <main className="flex-1">
         <Routes>
@@ -69,6 +79,7 @@ const AppLayout = () => {
         </Routes>
       </main>
       {!hideShell && <Footer />}
+      {!hideShell && <ScrollToTop />}
       <LoginModal />
     </div>
   );

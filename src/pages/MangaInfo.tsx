@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Play, Plus, Bell, BellOff, Share2, AlertCircle, ChevronDown, ArrowDownNarrowWide } from 'lucide-react';
+import { Play, Plus, Check, Bell, BellOff, Share2, AlertCircle, ChevronDown, ArrowDownNarrowWide } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMangaBySlug, useMangaChapters } from '@/hooks/useMangaBySlug';
 import { useAllManga } from '@/hooks/useAllManga';
 import { useMangaSubscription } from '@/hooks/useNotifications';
+import { useMangaBookmark } from '@/hooks/useBookmarks';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import TypeBadge from '@/components/TypeBadge';
 import TypeFlag from '@/components/TypeFlag';
 import CommentSection from '@/components/CommentSection';
@@ -34,8 +36,11 @@ export default function MangaInfo() {
   const { data: chapters = [] } = useMangaChapters(manga?.id);
   const { isAuthenticated, setShowLoginModal } = useAuth();
   const { isSubscribed, toggleSubscription } = useMangaSubscription(manga?.id);
+  const { isBookmarked, toggleBookmark } = useMangaBookmark(manga?.id);
+  const { settings } = useSiteSettings();
   const { data: allManga = [] } = useAllManga();
-  const trending = allManga.filter(m => m.trending).slice(0, 8);
+  // Trending sidebar: top 8 by views (automatic)
+  const trending = [...allManga].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 8);
   const [expanded, setExpanded] = useState(false);
   const [reactions, setReactions] = useState<Record<string, number>>(
     Object.fromEntries(REACTIONS.map(r => [r.label, 0]))
@@ -44,7 +49,11 @@ export default function MangaInfo() {
   const [showWarning, setShowWarning] = useState(false);
   const [warningAcknowledged, setWarningAcknowledged] = useState(false);
 
-  // Check for content warnings on mount
+  // Social links from settings
+  const discordUrl = (settings.general as any)?.discord_url || 'https://discord.gg';
+  const patreonUrl = (settings.general as any)?.patreon_url || '';
+  const siteName = settings.general.site_name;
+
   useEffect(() => {
     if (manga && manga.content_warnings && manga.content_warnings.length > 0 && !warningAcknowledged) {
       setShowWarning(true);
@@ -78,10 +87,21 @@ export default function MangaInfo() {
     : 'N/A';
 
   const handleWarningClose = (open: boolean) => {
-    if (!open) {
-      setWarningAcknowledged(true);
-    }
+    if (!open) setWarningAcknowledged(true);
     setShowWarning(open);
+  };
+
+  const handleShare = () => {
+    const shareData = {
+      title: `${manga.title} - ${siteName}`,
+      url: window.location.href,
+    };
+    if (navigator.share) {
+      navigator.share(shareData);
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Link copied to clipboard!');
+    }
   };
 
   return (
@@ -150,8 +170,17 @@ export default function MangaInfo() {
                     </Button>
                   </Link>
                 )}
-                <Button variant="secondary" className="gap-2 rounded-lg bg-muted/60 border border-border/40 hover:bg-muted h-11 px-5 text-sm font-semibold text-foreground">
-                  <Plus className="w-4 h-4" /> Add to Library
+                <Button
+                  variant="secondary"
+                  className={`gap-2 rounded-lg border border-border/40 hover:bg-muted h-11 px-5 text-sm font-semibold ${isBookmarked ? 'bg-primary/15 text-primary border-primary/30' : 'bg-muted/60 text-foreground'}`}
+                  onClick={() => {
+                    if (!isAuthenticated) { setShowLoginModal(true); return; }
+                    toggleBookmark.mutate();
+                    toast.success(isBookmarked ? 'Removed from library' : 'Added to library');
+                  }}
+                >
+                  {isBookmarked ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                  {isBookmarked ? 'In Library' : 'Add to Library'}
                 </Button>
                 <Button
                   variant="secondary"
@@ -172,29 +201,39 @@ export default function MangaInfo() {
           <div className="space-y-2.5">
             <div className="flex items-center justify-between p-5 rounded-xl bg-secondary/60 border border-border/50">
               <div>
-                <p className="text-base font-semibold">Share Kayn Scan</p>
+                <p className="text-base font-semibold">Share {siteName}</p>
                 <p className="text-sm text-muted-foreground">to your friends</p>
               </div>
-              <Button size="icon" className="rounded-full bg-teal-500 hover:bg-teal-600 h-11 w-11 shadow-md">
+              <Button size="icon" className="rounded-full bg-teal-500 hover:bg-teal-600 h-11 w-11 shadow-md" onClick={handleShare}>
                 <Share2 className="w-5 h-5" />
               </Button>
             </div>
             <div className="flex flex-wrap gap-2.5">
               <div className="flex-1 flex items-center justify-between p-4 rounded-xl bg-secondary/60 border border-border/50">
                 <div>
-                  <p className="text-sm font-semibold">Facing an Issue?</p>
-                  <p className="text-xs text-muted-foreground">Let us know, and we'll help ASAP</p>
+                  <p className="text-sm font-semibold">{patreonUrl ? 'Donate Us' : 'Facing an Issue?'}</p>
+                  <p className="text-xs text-muted-foreground">{patreonUrl ? 'Support us on Patreon' : "Let us know, and we'll help ASAP"}</p>
                 </div>
-                <Button size="sm" variant="destructive" className="text-sm rounded-lg gap-1.5 h-9 px-4">
-                  <AlertCircle className="w-4 h-4" /> Report
-                </Button>
+                {patreonUrl ? (
+                  <Button size="sm" className="text-sm rounded-lg gap-1.5 h-9 px-4" onClick={() => window.open(patreonUrl, '_blank')}>
+                    💖 Donate
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="destructive" className="text-sm rounded-lg gap-1.5 h-9 px-4">
+                    <AlertCircle className="w-4 h-4" /> Report
+                  </Button>
+                )}
               </div>
               <div className="flex-1 flex items-center justify-between p-4 rounded-xl bg-secondary/60 border border-border/50">
                 <div>
                   <p className="text-sm font-semibold">Join Our Socials</p>
                   <p className="text-xs text-muted-foreground">to explore more</p>
                 </div>
-                <Button size="sm" className="text-sm rounded-lg gap-1.5 h-9 px-4 bg-[#5865F2] hover:bg-[#4752C4]">
+                <Button
+                  size="sm"
+                  className="text-sm rounded-lg gap-1.5 h-9 px-4 bg-[#5865F2] hover:bg-[#4752C4]"
+                  onClick={() => window.open(discordUrl, '_blank')}
+                >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
                   Discord
                 </Button>
@@ -286,6 +325,7 @@ export default function MangaInfo() {
 
         {/* Trending Sidebar */}
         <aside className="hidden xl:block w-full xl:w-[380px] shrink-0 space-y-2.5">
+          <h3 className="text-lg font-bold mb-3">🔥 Trending</h3>
           {trending.map((m, i) => (
             <Link
               key={m.id}

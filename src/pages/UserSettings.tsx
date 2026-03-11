@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Settings, Camera, User, Bell, Moon, Sun, Monitor, Save, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,24 +13,54 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export default function UserSettings() {
-  const { isAuthenticated, user, profile, setShowLoginModal } = useAuth();
+  const { isAuthenticated, user, profile, setShowLoginModal, refreshProfile } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [displayName, setDisplayName] = useState(profile?.display_name || '');
+  const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
-  const [avatarPreview, setAvatarPreview] = useState(profile?.avatar_url || '');
+  const [avatarPreview, setAvatarPreview] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Notification preferences (local)
+  // Notification preferences
   const [notifNewChapter, setNotifNewChapter] = useState(true);
   const [notifCommentReply, setNotifCommentReply] = useState(true);
   const [notifUpdates, setNotifUpdates] = useState(false);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
-  // Reading preferences (local)
+  // Reading preferences
   const [themeMode, setThemeMode] = useState<string>(theme);
   const [readerDirection, setReaderDirection] = useState('vertical');
+
+  // Load profile data when available
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.display_name || '');
+      setAvatarPreview(profile.avatar_url || '');
+    }
+  }, [profile]);
+
+  // Load preferences from DB
+  useEffect(() => {
+    if (user && !prefsLoaded) {
+      supabase
+        .from('user_preferences' as any)
+        .select('preferences')
+        .eq('user_id', user.id)
+        .maybeSingle()
+        .then(({ data }: any) => {
+          if (data?.preferences) {
+            const p = data.preferences;
+            if (p.notif_new_chapter !== undefined) setNotifNewChapter(p.notif_new_chapter);
+            if (p.notif_comment_reply !== undefined) setNotifCommentReply(p.notif_comment_reply);
+            if (p.notif_updates !== undefined) setNotifUpdates(p.notif_updates);
+            if (p.reader_direction) setReaderDirection(p.reader_direction);
+          }
+          setPrefsLoaded(true);
+        });
+    }
+  }, [user, prefsLoaded]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -52,12 +82,12 @@ export default function UserSettings() {
 
       if (avatarFile) {
         const ext = avatarFile.name.split('.').pop();
-        const path = `${user.id}/avatar.${ext}`;
+        const path = `avatars/${user.id}/avatar.${ext}`;
         const { error: uploadErr } = await supabase.storage
-          .from('avatars')
+          .from('manga-assets')
           .upload(path, avatarFile, { upsert: true });
         if (uploadErr) throw uploadErr;
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+        const { data: urlData } = supabase.storage.from('manga-assets').getPublicUrl(path);
         avatarUrl = urlData.publicUrl;
       }
 
@@ -70,6 +100,24 @@ export default function UserSettings() {
         .eq('id', user.id);
 
       if (error) throw error;
+
+      // Save notification preferences
+      await supabase.from('user_preferences' as any).upsert({
+        user_id: user.id,
+        preferences: {
+          notif_new_chapter: notifNewChapter,
+          notif_comment_reply: notifCommentReply,
+          notif_updates: notifUpdates,
+          reader_direction: readerDirection,
+        },
+        updated_at: new Date().toISOString(),
+      } as any, { onConflict: 'user_id' });
+
+      // Refresh profile in context
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+
       toast.success('Profile updated!');
     } catch (err: any) {
       toast.error(err.message || 'Failed to save profile');
@@ -192,7 +240,7 @@ export default function UserSettings() {
           <Card className="bg-secondary/40 border-border">
             <CardHeader>
               <CardTitle className="text-base">Notification Preferences</CardTitle>
-              <CardDescription>Choose what you'd like to be notified about.</CardDescription>
+              <CardDescription>Choose what you'd like to be notified about. Click Save to persist.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               {[
@@ -208,6 +256,10 @@ export default function UserSettings() {
                   <Switch checked={item.checked} onCheckedChange={item.set} />
                 </div>
               ))}
+              <Button onClick={handleSaveProfile} disabled={saving} className="gap-2 mt-4">
+                <Save className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Save Preferences'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -263,6 +315,11 @@ export default function UserSettings() {
                   ))}
                 </RadioGroup>
               </div>
+
+              <Button onClick={handleSaveProfile} disabled={saving} className="gap-2">
+                <Save className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Save Preferences'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

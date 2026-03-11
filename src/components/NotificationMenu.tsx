@@ -90,16 +90,24 @@ export default function NotificationMenu() {
                   </>
                 ) : n.type === 'comment_reply' ? (
                   <>
-                    <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Link
+                      to={n.manga ? `/manga/${n.manga.slug}` : '#'}
+                      onClick={() => { markAsRead.mutate(n.id); setOpen(false); }}
+                      className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0"
+                    >
                       <MessageCircle className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
+                    </Link>
+                    <Link
+                      to={n.manga ? `/manga/${n.manga.slug}` : '#'}
+                      onClick={() => { markAsRead.mutate(n.id); setOpen(false); }}
+                      className="flex-1 min-w-0"
+                    >
                       <p className="text-sm font-medium">{n.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
                       <p className="text-[10px] text-muted-foreground/60 mt-1">
                         {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                       </p>
-                    </div>
+                    </Link>
                     {!n.is_read && (
                       <button onClick={() => markAsRead.mutate(n.id)} className="shrink-0 mt-1">
                         <Check className="w-3.5 h-3.5 text-muted-foreground hover:text-primary transition-colors" />

@@ -85,6 +85,8 @@ export default function AdminPanel() {
     footer_text: '',
     footer_tagline: '',
     logo_url: '',
+    discord_url: '',
+    patreon_url: '',
     announcement_message: '',
     announcement_button_text: '',
     announcement_button_url: '',
@@ -107,6 +109,8 @@ export default function AdminPanel() {
         footer_text: settings.general.footer_text,
         footer_tagline: settings.general.footer_tagline,
         logo_url: settings.general.logo_url || '',
+        discord_url: (settings.general as any).discord_url || '',
+        patreon_url: (settings.general as any).patreon_url || '',
         announcement_message: settings.announcements.message,
         announcement_button_text: (settings.announcements as any).button_text || '',
         announcement_button_url: (settings.announcements as any).button_url || '',
@@ -216,6 +220,8 @@ export default function AdminPanel() {
             footer_text: settingsForm.footer_text,
             footer_tagline: settingsForm.footer_tagline,
             logo_url: settingsForm.logo_url,
+            discord_url: settingsForm.discord_url,
+            patreon_url: settingsForm.patreon_url,
           },
         }),
         updateSettings.mutateAsync({
@@ -269,6 +275,8 @@ export default function AdminPanel() {
         footer_text: settings.general.footer_text,
         footer_tagline: settings.general.footer_tagline,
         logo_url: settings.general.logo_url || '',
+        discord_url: (settings.general as any).discord_url || '',
+        patreon_url: (settings.general as any).patreon_url || '',
         announcement_message: settings.announcements.message,
         announcement_button_text: (settings.announcements as any).button_text || '',
         announcement_button_url: (settings.announcements as any).button_url || '',
@@ -597,6 +605,21 @@ export default function AdminPanel() {
                     <div>
                       <label className="text-sm font-medium mb-1 block">Footer Tagline</label>
                       <Input value={settingsForm.footer_tagline} onChange={e => setSettingsForm(s => ({ ...s, footer_tagline: e.target.value }))} className="rounded-xl bg-background" placeholder="e.g. Your gateway to manga" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Social Links */}
+                <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+                  <h3 className="font-semibold flex items-center gap-2"><Link2 className="w-4 h-4" /> Social Links</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Discord URL</label>
+                      <Input value={settingsForm.discord_url} onChange={e => setSettingsForm(s => ({ ...s, discord_url: e.target.value }))} className="rounded-xl bg-background" placeholder="https://discord.gg/..." />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Patreon URL</label>
+                      <Input value={settingsForm.patreon_url} onChange={e => setSettingsForm(s => ({ ...s, patreon_url: e.target.value }))} className="rounded-xl bg-background" placeholder="https://patreon.com/..." />
                     </div>
                   </div>
                 </div>

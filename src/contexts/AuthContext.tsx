@@ -17,6 +17,7 @@ interface AuthContextType {
   loginWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   showLoginModal: boolean;
   setShowLoginModal: (show: boolean) => void;
 }
@@ -108,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginWithEmail,
         signUpWithEmail,
         logout,
+        refreshProfile: async () => { if (user) await fetchProfile(user.id); },
         showLoginModal,
         setShowLoginModal,
       }}

@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
-import { ThumbsUp, MessageCircle, LogIn, Pin, Shield, Send, ChevronDown } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { ThumbsUp, MessageCircle, LogIn, Pin, Shield, Send, Pencil, Trash2, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useComments, CommentRow } from '@/hooks/useComments';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 type SortMode = 'popular' | 'recent';
 
@@ -13,23 +14,134 @@ interface Props {
   mangaId: string;
 }
 
+// Parse @mentions and render as highlighted spans
+function renderTextWithMentions(text: string) {
+  const parts = text.split(/(@[\w\s]+?)(?=\s@|\s|$)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('@')) {
+      return <span key={i} className="text-primary font-medium">{part}</span>;
+    }
+    return part;
+  });
+}
+
+function MentionInput({
+  value,
+  onChange,
+  placeholder,
+  className,
+  autoFocus,
+  mangaId,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+  autoFocus?: boolean;
+  mangaId: string;
+}) {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ display_name: string }[]>([]);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleChange = async (newValue: string) => {
+    onChange(newValue);
+    // Check if user is typing @mention
+    const cursor = textareaRef.current?.selectionStart || newValue.length;
+    const textBeforeCursor = newValue.slice(0, cursor);
+    const atMatch = textBeforeCursor.match(/@(\w*)$/);
+    if (atMatch) {
+      const query = atMatch[1];
+      setMentionQuery(query);
+      if (query.length >= 1) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('display_name')
+          .ilike('display_name', `%${query}%`)
+          .limit(5);
+        setSuggestions((data || []).filter(p => p.display_name));
+        setShowSuggestions(true);
+      } else {
+        setShowSuggestions(false);
+      }
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectSuggestion = (name: string) => {
+    const cursor = textareaRef.current?.selectionStart || value.length;
+    const textBeforeCursor = value.slice(0, cursor);
+    const textAfterCursor = value.slice(cursor);
+    const newBefore = textBeforeCursor.replace(/@\w*$/, `@${name} `);
+    onChange(newBefore + textAfterCursor);
+    setShowSuggestions(false);
+  };
+
+  return (
+    <div className="relative">
+      <Textarea
+        ref={textareaRef}
+        placeholder={placeholder}
+        value={value}
+        onChange={e => handleChange(e.target.value)}
+        className={className}
+        autoFocus={autoFocus}
+      />
+      {showSuggestions && suggestions.length > 0 && (
+        <div className="absolute bottom-full left-0 mb-1 w-60 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+          {suggestions.map(s => (
+            <button
+              key={s.display_name}
+              onClick={() => selectSuggestion(s.display_name!)}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+            >
+              @{s.display_name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CommentItem({
   comment,
   isAdmin,
   isAuthenticated,
+  currentUserId,
   onReply,
   onLike,
   onPin,
+  onEdit,
+  onDelete,
+  mangaId,
 }: {
   comment: CommentRow;
   isAdmin: boolean;
   isAuthenticated: boolean;
+  currentUserId?: string;
   onReply: (id: string) => void;
   onLike: (id: string, hasLiked: boolean) => void;
   onPin: (id: string, isPinned: boolean) => void;
+  onEdit: (id: string, text: string) => void;
+  onDelete: (id: string) => void;
+  mangaId: string;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.text);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const displayName = comment.profile?.display_name || 'User';
   const initial = displayName[0]?.toUpperCase() || 'U';
+  const isOwner = currentUserId === comment.user_id;
+
+  const handleSaveEdit = () => {
+    if (editText.trim() && editText !== comment.text) {
+      onEdit(comment.id, editText.trim());
+    }
+    setEditing(false);
+  };
 
   return (
     <div className={`p-3 rounded-xl space-y-2 ${comment.is_pinned ? 'bg-primary/5 border border-primary/20' : 'bg-secondary/50'}`}>
@@ -57,18 +169,51 @@ function CommentItem({
             {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
           </span>
         </div>
-        {isAdmin && (
-          <button
-            onClick={() => onPin(comment.id, comment.is_pinned)}
-            className={`p-1 rounded hover:bg-muted transition-colors ${comment.is_pinned ? 'text-amber-500' : 'text-muted-foreground'}`}
-            title={comment.is_pinned ? 'Unpin' : 'Pin'}
-          >
-            <Pin className="w-3.5 h-3.5" />
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {isOwner && !editing && (
+            <>
+              <button onClick={() => { setEditing(true); setEditText(comment.text); }} className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground" title="Edit">
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              {confirmDelete ? (
+                <div className="flex items-center gap-1">
+                  <button onClick={() => onDelete(comment.id)} className="p-1 rounded bg-destructive/10 text-destructive" title="Confirm delete">
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => setConfirmDelete(false)} className="p-1 rounded hover:bg-muted text-muted-foreground" title="Cancel">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmDelete(true)} className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground" title="Delete">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => onPin(comment.id, comment.is_pinned)}
+              className={`p-1 rounded hover:bg-muted transition-colors ${comment.is_pinned ? 'text-amber-500' : 'text-muted-foreground'}`}
+              title={comment.is_pinned ? 'Unpin' : 'Pin'}
+            >
+              <Pin className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
-      <p className="text-sm text-foreground/90">{comment.text}</p>
+      {editing ? (
+        <div className="space-y-2">
+          <Textarea value={editText} onChange={e => setEditText(e.target.value)} className="bg-background border-border min-h-[60px] resize-none" />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleSaveEdit} disabled={!editText.trim()}>Save</Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-foreground/90">{renderTextWithMentions(comment.text)}</p>
+      )}
 
       <div className="flex items-center gap-3">
         <button
@@ -99,9 +244,13 @@ function CommentItem({
               comment={reply}
               isAdmin={isAdmin}
               isAuthenticated={isAuthenticated}
+              currentUserId={currentUserId}
               onReply={onReply}
               onLike={onLike}
               onPin={onPin}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              mangaId={mangaId}
             />
           ))}
         </div>
@@ -113,15 +262,17 @@ function CommentItem({
 export default function CommentSection({ mangaId }: Props) {
   const { isAuthenticated, user, setShowLoginModal } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const { comments, isLoading, addComment, toggleLike, togglePin } = useComments(mangaId);
+  const { comments, isLoading, addComment, toggleLike, togglePin, editComment, deleteComment } = useComments(mangaId);
   const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('recent');
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!newComment.trim()) return;
-    addComment.mutate({ text: newComment });
+    // Extract mentions
+    const mentions = [...newComment.matchAll(/@([\w\s]+?)(?=\s@|\s|$)/g)].map(m => m[1].trim());
+    await addComment.mutateAsync({ text: newComment, mentions });
     setNewComment('');
   };
 
@@ -130,22 +281,20 @@ export default function CommentSection({ mangaId }: Props) {
     setReplyText('');
   };
 
-  const submitReply = (parentId: string) => {
+  const submitReply = async (parentId: string) => {
     if (!replyText.trim()) return;
-    addComment.mutate({ text: replyText, parentId });
+    const mentions = [...replyText.matchAll(/@([\w\s]+?)(?=\s@|\s|$)/g)].map(m => m[1].trim());
+    await addComment.mutateAsync({ text: replyText, parentId, mentions });
     setReplyTo(null);
     setReplyText('');
   };
 
   const sortedComments = useMemo(() => {
-    // Pinned always first
     const pinned = comments.filter(c => c.is_pinned);
     const unpinned = comments.filter(c => !c.is_pinned);
-    
     const sorted = sortMode === 'popular'
       ? unpinned.sort((a, b) => b.likes_count - a.likes_count)
       : unpinned.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    
     return [...pinned, ...sorted];
   }, [comments, sortMode]);
 
@@ -180,11 +329,12 @@ export default function CommentSection({ mangaId }: Props) {
       {/* Input */}
       {isAuthenticated ? (
         <div className="space-y-2">
-          <Textarea
-            placeholder="Write a comment..."
+          <MentionInput
             value={newComment}
-            onChange={e => setNewComment(e.target.value)}
+            onChange={setNewComment}
+            placeholder="Write a comment... Use @username to mention someone"
             className="bg-secondary border-border min-h-[80px] resize-none"
+            mangaId={mangaId}
           />
           <div className="flex justify-end">
             <Button size="sm" onClick={handleSubmit} disabled={!newComment.trim() || addComment.isPending} className="gap-1.5">
@@ -213,18 +363,23 @@ export default function CommentSection({ mangaId }: Props) {
                 comment={c}
                 isAdmin={isAdmin}
                 isAuthenticated={isAuthenticated}
+                currentUserId={user?.id}
                 onReply={handleReply}
                 onLike={(id, hasLiked) => toggleLike.mutate({ commentId: id, hasLiked })}
                 onPin={(id, isPinned) => togglePin.mutate({ commentId: id, isPinned })}
+                onEdit={(id, text) => editComment.mutate({ commentId: id, text })}
+                onDelete={(id) => deleteComment.mutate(id)}
+                mangaId={mangaId}
               />
               {replyTo === c.id && (
                 <div className="ml-10 flex gap-2">
-                  <Textarea
-                    placeholder="Write a reply..."
+                  <MentionInput
                     value={replyText}
-                    onChange={e => setReplyText(e.target.value)}
+                    onChange={setReplyText}
+                    placeholder="Write a reply... Use @username to mention"
                     className="bg-secondary border-border min-h-[60px] resize-none flex-1"
                     autoFocus
+                    mangaId={mangaId}
                   />
                   <Button size="sm" onClick={() => submitReply(c.id)} disabled={!replyText.trim()} className="self-end">
                     Reply

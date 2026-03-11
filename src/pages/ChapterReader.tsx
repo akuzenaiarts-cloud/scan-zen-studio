@@ -9,6 +9,8 @@ import { useMangaBySlug, useMangaChapters } from '@/hooks/useMangaBySlug';
 import CommentSection from '@/components/CommentSection';
 import ChapterListModal from '@/components/ChapterListModal';
 import { useToast } from '@/hooks/use-toast';
+import { useRecordReading } from '@/hooks/useReadingHistory';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ChapterReader() {
   const { slug, chapterId } = useParams<{ slug: string; chapterId: string }>();
@@ -24,10 +26,22 @@ export default function ChapterReader() {
   const [reactionCounts, setReactionCounts] = useState<Record<string, number>>({
     like: 0, funny: 0, love: 0, surprised: 0, angry: 0, sad: 0,
   });
+  const recordReading = useRecordReading();
+  const { user } = useAuth();
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [chapterNum]);
+
+  // Record reading history
+  useEffect(() => {
+    if (manga && user) {
+      const currentChapter = chapters.find(c => c.number === chapterNum);
+      if (currentChapter) {
+        recordReading.mutate({ mangaId: manga.id, chapterId: currentChapter.id, chapterNumber: chapterNum });
+      }
+    }
+  }, [manga?.id, chapterNum, user?.id, chapters]);
 
   if (isLoading) {
     return (
