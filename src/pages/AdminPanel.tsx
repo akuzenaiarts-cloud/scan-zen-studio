@@ -275,6 +275,8 @@ export default function AdminPanel() {
         footer_text: settings.general.footer_text,
         footer_tagline: settings.general.footer_tagline,
         logo_url: settings.general.logo_url || '',
+        discord_url: (settings.general as any).discord_url || '',
+        patreon_url: (settings.general as any).patreon_url || '',
         announcement_message: settings.announcements.message,
         announcement_button_text: (settings.announcements as any).button_text || '',
         announcement_button_url: (settings.announcements as any).button_url || '',
