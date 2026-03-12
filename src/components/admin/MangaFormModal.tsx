@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
