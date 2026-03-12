@@ -51,7 +51,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   announcements: { message: '' },
   upload: { max_size_mb: 10, allowed_formats: 'jpg, png, webp' },
   storage: { provider: 'supabase' },
-  theme: { preset: 'Purple Night' },
+  theme: { preset: 'Sakura' },
 };
 
 export const useSiteSettings = () => {
