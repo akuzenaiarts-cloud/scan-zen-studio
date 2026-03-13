@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Coins } from 'lucide-react';
 import { MangaWithChapters } from '@/hooks/useAllManga';
+import { usePremiumSettings } from '@/hooks/usePremiumSettings';
 import TypeBadge from './TypeBadge';
 
 interface LatestCardProps {
@@ -34,7 +35,15 @@ function NewBadge() {
   );
 }
 
-function ChapterRow({ ch, slug }: { ch: { id: string; number: number; premium: boolean | null; created_at: string }; slug: string }) {
+function CurrencyIcon({ iconUrl, className }: { iconUrl: string; className?: string }) {
+  return iconUrl ? (
+    <img src={iconUrl} alt="" className={`${className} object-contain`} />
+  ) : (
+    <Coins className={className} />
+  );
+}
+
+function ChapterRow({ ch, slug, currencyIconUrl }: { ch: { id: string; number: number; premium: boolean | null; created_at: string }; slug: string; currencyIconUrl: string }) {
   return (
     <Link
       key={ch.id}
@@ -43,7 +52,7 @@ function ChapterRow({ ch, slug }: { ch: { id: string; number: number; premium: b
     >
       <span className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground truncate">
         <span className="truncate">Chapter {ch.number}</span>
-        {ch.premium && <Coins className="w-3 h-3 text-amber-400 shrink-0" />}
+        {ch.premium && <CurrencyIcon iconUrl={currencyIconUrl} className="w-3 h-3 text-amber-400 shrink-0" />}
         {isNewChapter(ch.created_at) && <NewBadge />}
       </span>
       <span className="text-muted-foreground/50 text-[11px] shrink-0 ml-2">
@@ -54,6 +63,7 @@ function ChapterRow({ ch, slug }: { ch: { id: string; number: number; premium: b
 }
 
 export default function LatestCard({ manga }: LatestCardProps) {
+  const { settings } = usePremiumSettings();
   const chapters = manga.chapters || [];
   const sortByDate = (a: typeof chapters[0], b: typeof chapters[0]) =>
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -89,7 +99,7 @@ export default function LatestCard({ manga }: LatestCardProps) {
           )}
 
           {premiumChapters.map(ch => (
-            <ChapterRow key={ch.id} ch={ch} slug={manga.slug} />
+            <ChapterRow key={ch.id} ch={ch} slug={manga.slug} currencyIconUrl={settings.coin_system.currency_icon_url} />
           ))}
 
           {hasBoth && (
@@ -97,7 +107,7 @@ export default function LatestCard({ manga }: LatestCardProps) {
           )}
 
           {freeChapters.map(ch => (
-            <ChapterRow key={ch.id} ch={ch} slug={manga.slug} />
+            <ChapterRow key={ch.id} ch={ch} slug={manga.slug} currencyIconUrl={settings.coin_system.currency_icon_url} />
           ))}
         </div>
       </div>
