@@ -35,6 +35,9 @@ export default function ChapterReader() {
   const currencyName = premiumSettings.coin_system.currency_name;
   const coinBalance = useUserCoinBalance();
 
+  const currentChapter = chapters.find(c => c.number === chapterNum);
+  const { isUnlocked, unlock } = useChapterUnlock(currentChapter?.id);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [chapterNum]);
@@ -69,10 +72,8 @@ export default function ChapterReader() {
     );
   }
 
-  const currentChapter = chapters.find(c => c.number === chapterNum);
   const isPremiumChapter = !!currentChapter?.premium;
   const coinPrice = currentChapter?.coin_price ?? 100;
-  const { isUnlocked, unlock } = useChapterUnlock(currentChapter?.id);
   const maxChapter = chapters.length > 0 ? Math.max(...chapters.map(c => c.number)) : 0;
   const hasPrev = chapterNum > 1;
   const hasNext = chapterNum < maxChapter;
