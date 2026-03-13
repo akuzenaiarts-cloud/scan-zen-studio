@@ -304,7 +304,7 @@ export default function MangaInfo() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">{chDate}</p>
                         {isPremium && (
-                          <p className="text-[10px] text-amber-500 mt-0.5 font-medium">🪙 100 coins</p>
+                          <p className="text-[10px] text-amber-500 mt-0.5 font-medium">🪙 {ch.coin_price ?? 100} {currencyName}</p>
                         )}
                       </div>
                     </Link>
