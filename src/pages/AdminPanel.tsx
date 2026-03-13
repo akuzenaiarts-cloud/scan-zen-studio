@@ -4,8 +4,9 @@ import {
   LayoutDashboard, BookOpen, Users, Settings, ArrowLeft, Plus, Search,
   Eye, Star, Bookmark, TrendingUp, Edit, Trash2, Shield, ChevronDown,
   BarChart3, FileText, Bell, Globe, Upload, MoreHorizontal, List, Save, RotateCcw, Image,
-  Database, Palette, Link2, ExternalLink
+  Database, Palette, Link2, ExternalLink, Crown
 } from 'lucide-react';
+import PremiumContent from '@/pages/admin/PremiumContent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
