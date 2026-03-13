@@ -84,7 +84,7 @@ export default function UserMenu() {
             )}
             <Link to="/earn" onClick={close}>
               <Button variant="ghost" className="w-full justify-start gap-2.5 rounded-xl h-10 hover:bg-muted text-sm font-medium">
-                <Coins className="w-4 h-4" /> Earn Coins/Tickets
+                <Ticket className="w-4 h-4" /> Earn Tickets
               </Button>
             </Link>
             <Link to="/coin-shop" onClick={close}>
