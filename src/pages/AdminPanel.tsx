@@ -469,6 +469,8 @@ export default function AdminPanel() {
           </div>
         )}
 
+        {activeTab === 'premium' && <PremiumContent />}
+
         {activeTab === 'users' && (
           <div className="space-y-6 max-w-6xl">
             <div>
