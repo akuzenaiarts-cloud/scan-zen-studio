@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Home, List, ZoomIn, ZoomOut, RotateCcw,
-  BookOpen, Share2, Flag, MessageSquare, Settings, X,
+  BookOpen, Share2, Flag, MessageSquare, Settings, X, Lock, Coins, ShoppingCart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMangaBySlug, useMangaChapters } from '@/hooks/useMangaBySlug';
@@ -11,6 +11,9 @@ import ChapterListModal from '@/components/ChapterListModal';
 import { useToast } from '@/hooks/use-toast';
 import { useRecordReading } from '@/hooks/useReadingHistory';
 import { useAuth } from '@/contexts/AuthContext';
+import { useChapterUnlock, useUserCoinBalance } from '@/hooks/useChapterUnlock';
+import { usePremiumSettings } from '@/hooks/usePremiumSettings';
+import { toast as sonnerToast } from 'sonner';
 
 export default function ChapterReader() {
   const { slug, chapterId } = useParams<{ slug: string; chapterId: string }>();
@@ -28,6 +31,9 @@ export default function ChapterReader() {
   });
   const recordReading = useRecordReading();
   const { user } = useAuth();
+  const { settings: premiumSettings } = usePremiumSettings();
+  const currencyName = premiumSettings.coin_system.currency_name;
+  const coinBalance = useUserCoinBalance();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -64,6 +70,9 @@ export default function ChapterReader() {
   }
 
   const currentChapter = chapters.find(c => c.number === chapterNum);
+  const isPremiumChapter = !!currentChapter?.premium;
+  const coinPrice = currentChapter?.coin_price ?? 100;
+  const { isUnlocked, unlock } = useChapterUnlock(currentChapter?.id);
   const maxChapter = chapters.length > 0 ? Math.max(...chapters.map(c => c.number)) : 0;
   const hasPrev = chapterNum > 1;
   const hasNext = chapterNum < maxChapter;
@@ -73,6 +82,26 @@ export default function ChapterReader() {
   };
 
   const pageUrls = currentChapter?.pages?.filter(Boolean) || [];
+  const isLocked = isPremiumChapter && pageUrls.length === 0 && !isUnlocked;
+
+  const handleUnlock = async () => {
+    if (!user) {
+      sonnerToast.error('Please sign in to unlock chapters');
+      return;
+    }
+    if (coinBalance < coinPrice) {
+      sonnerToast.error(`Not enough ${currencyName}. You need ${coinPrice} but have ${coinBalance}.`);
+      return;
+    }
+    try {
+      await unlock.mutateAsync({ chapterId: currentChapter!.id });
+      sonnerToast.success(`Chapter unlocked! ${coinPrice} ${currencyName} deducted.`);
+      // Reload to get pages via get_chapter_pages
+      window.location.reload();
+    } catch (err: any) {
+      sonnerToast.error(err.message || 'Failed to unlock chapter');
+    }
+  };
 
   const chapterListItems = chapters.map(ch => ({
     id: ch.id,
@@ -184,7 +213,40 @@ export default function ChapterReader() {
         <div className="w-full px-2 sm:px-4 py-4 sm:py-8">
           {/* Pages */}
           <div className="space-y-2 sm:space-y-4 mb-6 sm:mb-8">
-            {pageUrls.length > 0 ? (
+            {isLocked ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="text-center space-y-4 max-w-sm">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/15 flex items-center justify-center mx-auto">
+                    <Lock className="w-8 h-8 text-amber-500" />
+                  </div>
+                  <h2 className="text-xl font-bold">Premium Chapter</h2>
+                  <p className="text-sm text-muted-foreground">
+                    This chapter requires {coinPrice} {currencyName} to unlock.
+                  </p>
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <Coins className="w-4 h-4" />
+                    <span>Your balance: <strong className="text-foreground">{coinBalance}</strong> {currencyName}</span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      onClick={handleUnlock}
+                      disabled={unlock.isPending || (!user)}
+                      className="rounded-xl gap-2 h-12 text-base"
+                    >
+                      <Coins className="w-4 h-4" />
+                      {unlock.isPending ? 'Unlocking...' : `Unlock for ${coinPrice} ${currencyName}`}
+                    </Button>
+                    {coinBalance < coinPrice && (
+                      <Button variant="outline" asChild className="rounded-xl gap-2">
+                        <Link to="/coin-shop">
+                          <ShoppingCart className="w-4 h-4" /> Get more {currencyName}
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : pageUrls.length > 0 ? (
               pageUrls.map((page, i) => (
                 <div key={i} className="flex justify-center">
                   <img

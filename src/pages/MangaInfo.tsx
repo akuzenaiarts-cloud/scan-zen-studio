@@ -8,6 +8,7 @@ import { useMangaSubscription } from '@/hooks/useNotifications';
 import { useMangaBookmark } from '@/hooks/useBookmarks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { usePremiumSettings } from '@/hooks/usePremiumSettings';
 import TypeBadge from '@/components/TypeBadge';
 import TypeFlag from '@/components/TypeFlag';
 import CommentSection from '@/components/CommentSection';
@@ -38,6 +39,8 @@ export default function MangaInfo() {
   const { isSubscribed, toggleSubscription } = useMangaSubscription(manga?.id);
   const { isBookmarked, toggleBookmark } = useMangaBookmark(manga?.id);
   const { settings } = useSiteSettings();
+  const { settings: premiumSettings } = usePremiumSettings();
+  const currencyName = premiumSettings.coin_system.currency_name;
   const { data: allManga = [] } = useAllManga();
   // Trending sidebar: top 8 by views (automatic)
   const trending = [...allManga].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 8);
@@ -302,7 +305,7 @@ export default function MangaInfo() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">{chDate}</p>
                         {isPremium && (
-                          <p className="text-[10px] text-amber-500 mt-0.5 font-medium">🪙 100 coins</p>
+                          <p className="text-[10px] text-amber-500 mt-0.5 font-medium">🪙 {ch.coin_price ?? 100} {currencyName}</p>
                         )}
                       </div>
                     </Link>
