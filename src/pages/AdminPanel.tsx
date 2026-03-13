@@ -151,6 +151,7 @@ export default function AdminPanel() {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'manga', label: 'Manga', icon: <BookOpen className="w-4 h-4" /> },
+    { id: 'premium', label: 'Premium Content', icon: <Crown className="w-4 h-4" /> },
     { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" /> },
     { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
   ];
