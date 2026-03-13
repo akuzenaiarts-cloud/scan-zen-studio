@@ -621,6 +621,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_user_balance: {
+        Args: {
+          p_coin_balance: number
+          p_target_user_id: string
+          p_token_balance: number
+        }
+        Returns: undefined
+      }
       can_user_checkin: { Args: { p_user_id: string }; Returns: boolean }
       get_chapter_pages: { Args: { p_chapter_id: string }; Returns: string[] }
       handle_auto_free_chapters: { Args: never; Returns: undefined }
@@ -641,6 +649,10 @@ export type Database = {
         Returns: undefined
       }
       unlock_chapter_with_coins: {
+        Args: { p_chapter_id: string; p_user_id: string }
+        Returns: Json
+      }
+      unlock_chapter_with_token: {
         Args: { p_chapter_id: string; p_user_id: string }
         Returns: Json
       }
