@@ -27,7 +27,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
 type Manga = Tables<"manga">;
-type Tab = 'overview' | 'manga' | 'users' | 'settings';
+type Tab = 'overview' | 'manga' | 'premium' | 'users' | 'settings';
 type SettingsSubTab = 'general' | 'theme' | 'announcements' | 'upload' | 'storage';
 
 interface UserRow {
