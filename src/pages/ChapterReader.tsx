@@ -70,6 +70,9 @@ export default function ChapterReader() {
   }
 
   const currentChapter = chapters.find(c => c.number === chapterNum);
+  const isPremiumChapter = !!currentChapter?.premium;
+  const coinPrice = currentChapter?.coin_price ?? 100;
+  const { isUnlocked, unlock } = useChapterUnlock(currentChapter?.id);
   const maxChapter = chapters.length > 0 ? Math.max(...chapters.map(c => c.number)) : 0;
   const hasPrev = chapterNum > 1;
   const hasNext = chapterNum < maxChapter;
@@ -79,6 +82,26 @@ export default function ChapterReader() {
   };
 
   const pageUrls = currentChapter?.pages?.filter(Boolean) || [];
+  const isLocked = isPremiumChapter && pageUrls.length === 0 && !isUnlocked;
+
+  const handleUnlock = async () => {
+    if (!user) {
+      sonnerToast.error('Please sign in to unlock chapters');
+      return;
+    }
+    if (coinBalance < coinPrice) {
+      sonnerToast.error(`Not enough ${currencyName}. You need ${coinPrice} but have ${coinBalance}.`);
+      return;
+    }
+    try {
+      await unlock.mutateAsync({ chapterId: currentChapter!.id });
+      sonnerToast.success(`Chapter unlocked! ${coinPrice} ${currencyName} deducted.`);
+      // Reload to get pages via get_chapter_pages
+      window.location.reload();
+    } catch (err: any) {
+      sonnerToast.error(err.message || 'Failed to unlock chapter');
+    }
+  };
 
   const chapterListItems = chapters.map(ch => ({
     id: ch.id,
