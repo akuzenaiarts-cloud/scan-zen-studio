@@ -1,16 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { User, BookOpen, Moon, Sun, Coins, ShoppingCart, Settings, Shield, LogOut, LayoutDashboard } from 'lucide-react';
+import { User, BookOpen, Moon, Sun, Coins, ShoppingCart, Settings, Shield, LogOut, LayoutDashboard, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { usePremiumSettings } from '@/hooks/usePremiumSettings';
 
 export default function UserMenu() {
   const { profile, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { isAdmin } = useIsAdmin();
+  const { settings: premiumSettings } = usePremiumSettings();
+  const currencyName = premiumSettings.coin_system.currency_name;
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -81,12 +84,12 @@ export default function UserMenu() {
             )}
             <Link to="/earn" onClick={close}>
               <Button variant="ghost" className="w-full justify-start gap-2.5 rounded-xl h-10 hover:bg-muted text-sm font-medium">
-                <Coins className="w-4 h-4" /> Earn Coins/Tickets
+                <Ticket className="w-4 h-4" /> Earn Tickets
               </Button>
             </Link>
             <Link to="/coin-shop" onClick={close}>
               <Button variant="ghost" className="w-full justify-start gap-2.5 rounded-xl h-10 hover:bg-muted text-sm font-medium">
-                <ShoppingCart className="w-4 h-4" /> Coin Shop
+                <ShoppingCart className="w-4 h-4" /> {currencyName} Shop
               </Button>
             </Link>
             <Link to="/settings" onClick={close}>

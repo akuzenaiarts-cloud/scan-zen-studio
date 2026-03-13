@@ -4,8 +4,9 @@ import {
   LayoutDashboard, BookOpen, Users, Settings, ArrowLeft, Plus, Search,
   Eye, Star, Bookmark, TrendingUp, Edit, Trash2, Shield, ChevronDown,
   BarChart3, FileText, Bell, Globe, Upload, MoreHorizontal, List, Save, RotateCcw, Image,
-  Database, Palette, Link2, ExternalLink
+  Database, Palette, Link2, ExternalLink, Crown
 } from 'lucide-react';
+import PremiumContent from '@/pages/admin/PremiumContent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,7 +27,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
 type Manga = Tables<"manga">;
-type Tab = 'overview' | 'manga' | 'users' | 'settings';
+type Tab = 'overview' | 'manga' | 'premium' | 'users' | 'settings';
 type SettingsSubTab = 'general' | 'theme' | 'announcements' | 'upload' | 'storage';
 
 interface UserRow {
@@ -150,6 +151,7 @@ export default function AdminPanel() {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'manga', label: 'Manga', icon: <BookOpen className="w-4 h-4" /> },
+    { id: 'premium', label: 'Premium Content', icon: <Crown className="w-4 h-4" /> },
     { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" /> },
     { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
   ];
@@ -466,6 +468,8 @@ export default function AdminPanel() {
             )}
           </div>
         )}
+
+        {activeTab === 'premium' && <PremiumContent />}
 
         {activeTab === 'users' && (
           <div className="space-y-6 max-w-6xl">

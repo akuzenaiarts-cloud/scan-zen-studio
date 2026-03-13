@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_ips: {
+        Row: {
+          created_at: string
+          ip_address: string
+        }
+        Insert: {
+          created_at?: string
+          ip_address: string
+        }
+        Update: {
+          created_at?: string
+          ip_address?: string
+        }
+        Relationships: []
+      }
       bookmarks: {
         Row: {
           created_at: string
@@ -43,9 +58,54 @@ export type Database = {
           },
         ]
       }
+      chapter_unlocks: {
+        Row: {
+          chapter_id: string
+          expires_at: string | null
+          id: string
+          unlock_type: string | null
+          unlocked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chapter_id: string
+          expires_at?: string | null
+          id?: string
+          unlock_type?: string | null
+          unlocked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string
+          expires_at?: string | null
+          id?: string
+          unlock_type?: string | null
+          unlocked_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapter_unlocks_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chapter_unlocks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chapters: {
         Row: {
+          auto_free_days: number | null
+          coin_price: number | null
           created_at: string
+          free_release_at: string | null
           id: string
           manga_id: string
           number: number
@@ -54,7 +114,10 @@ export type Database = {
           title: string | null
         }
         Insert: {
+          auto_free_days?: number | null
+          coin_price?: number | null
           created_at?: string
+          free_release_at?: string | null
           id?: string
           manga_id: string
           number: number
@@ -63,7 +126,10 @@ export type Database = {
           title?: string | null
         }
         Update: {
+          auto_free_days?: number | null
+          coin_price?: number | null
           created_at?: string
+          free_release_at?: string | null
           id?: string
           manga_id?: string
           number?: number
@@ -405,27 +471,33 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           coin_balance: number | null
+          consecutive_comment_days: number | null
           created_at: string
           display_name: string | null
           id: string
+          last_comment_at: string | null
           token_balance: number | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
           coin_balance?: number | null
+          consecutive_comment_days?: number | null
           created_at?: string
           display_name?: string | null
           id: string
+          last_comment_at?: string | null
           token_balance?: number | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
           coin_balance?: number | null
+          consecutive_comment_days?: number | null
           created_at?: string
           display_name?: string | null
           id?: string
+          last_comment_at?: string | null
           token_balance?: number | null
         }
         Relationships: []
@@ -549,6 +621,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_user_checkin: { Args: { p_user_id: string }; Returns: boolean }
+      get_chapter_pages: { Args: { p_chapter_id: string }; Returns: string[] }
+      handle_auto_free_chapters: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -558,6 +633,11 @@ export type Database = {
       }
       increment_token_balance: {
         Args: { amount: number; user_id: string }
+        Returns: undefined
+      }
+      is_ip_blocked: { Args: { p_ip: string }; Returns: boolean }
+      secure_increment_tokens: {
+        Args: { p_amount: number; p_user_id: string }
         Returns: undefined
       }
     }
