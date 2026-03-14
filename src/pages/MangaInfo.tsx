@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Play, Plus, Check, Bell, BellOff, Share2, AlertCircle, ChevronDown, ArrowDownNarrowWide, Lock } from 'lucide-react';
+import { Play, Plus, Check, Bell, BellOff, Share2, AlertCircle, ChevronDown, ArrowDownNarrowWide, Lock, Unlock, Coins, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMangaBySlug, useMangaChapters } from '@/hooks/useMangaBySlug';
 import { useAllManga } from '@/hooks/useAllManga';
@@ -14,6 +14,8 @@ import TypeFlag from '@/components/TypeFlag';
 import CommentSection from '@/components/CommentSection';
 import { ContentWarningDialog } from '@/components/ContentWarningDialog';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const GENRE_EMOJI: Record<string, string> = {
   Action: '⚔️', Fantasy: '🔮', Adventure: '🧭', Drama: '🎲', Romance: '❤️',
@@ -35,15 +37,44 @@ export default function MangaInfo() {
   const { slug } = useParams<{ slug: string }>();
   const { data: manga, isLoading } = useMangaBySlug(slug || '');
   const { data: chapters = [] } = useMangaChapters(manga?.id);
-  const { isAuthenticated, setShowLoginModal } = useAuth();
+  const { isAuthenticated, user, setShowLoginModal } = useAuth();
   const { isSubscribed, toggleSubscription } = useMangaSubscription(manga?.id);
   const { isBookmarked, toggleBookmark } = useMangaBookmark(manga?.id);
   const { settings } = useSiteSettings();
   const { settings: premiumSettings } = usePremiumSettings();
   const currencyName = premiumSettings.coin_system.currency_name;
+  const currencyIconUrl = premiumSettings.coin_system.currency_icon_url;
   const { data: allManga = [] } = useAllManga();
   // Trending sidebar: top 8 by views (automatic)
   const trending = [...allManga].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 8);
+
+  // Fetch user's chapter unlocks for this manga
+  const { data: userUnlocks = [] } = useQuery({
+    queryKey: ['user-chapter-unlocks', manga?.id, user?.id],
+    queryFn: async () => {
+      if (!user || !manga) return [];
+      const { data } = await supabase
+        .from('chapter_unlocks')
+        .select('chapter_id, unlock_type, expires_at')
+        .eq('user_id', user.id);
+      return data || [];
+    },
+    enabled: !!user && !!manga,
+  });
+
+  const getUnlockStatus = (chapterId: string) => {
+    const unlock = userUnlocks.find(u => u.chapter_id === chapterId);
+    if (!unlock) return null;
+    if (unlock.expires_at && new Date(unlock.expires_at) <= new Date()) return null;
+    return unlock;
+  };
+
+  const CurrencyIcon = ({ className }: { className?: string }) =>
+    currencyIconUrl ? (
+      <img src={currencyIconUrl} alt={currencyName} className={`${className} object-contain`} />
+    ) : (
+      <Coins className={className} />
+    );
   const [expanded, setExpanded] = useState(false);
   const [reactions, setReactions] = useState<Record<string, number>>(
     Object.fromEntries(REACTIONS.map(r => [r.label, 0]))
@@ -275,6 +306,12 @@ export default function MangaInfo() {
                 {visibleChapters.map((ch, idx) => {
                   const chDate = new Date(ch.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                   const isPremium = !!ch.premium;
+                  const unlockRecord = getUnlockStatus(ch.id);
+                  const isChapterUnlocked = !!unlockRecord;
+                  const isTicketUnlock = unlockRecord?.unlock_type === 'ticket';
+                  const ticketDaysLeft = isTicketUnlock && unlockRecord?.expires_at
+                    ? Math.max(0, Math.ceil((new Date(unlockRecord.expires_at).getTime() - Date.now()) / 86400000))
+                    : 0;
                   return (
                     <Link
                       key={ch.id}
@@ -285,11 +322,16 @@ export default function MangaInfo() {
                         <img
                           src={manga.cover_url}
                           alt=""
-                          className={`w-[72px] h-[56px] object-cover rounded-lg transition-opacity ${isPremium ? 'opacity-50' : 'opacity-80 group-hover:opacity-100'}`}
+                          className={`w-[72px] h-[56px] object-cover rounded-lg transition-opacity ${isPremium && !isChapterUnlocked ? 'opacity-50' : 'opacity-80 group-hover:opacity-100'}`}
                         />
-                        {isPremium && (
+                        {isPremium && !isChapterUnlocked && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
                             <Lock className="w-4 h-4 text-amber-400" />
+                          </div>
+                        )}
+                        {isPremium && isChapterUnlocked && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+                            <Unlock className="w-4 h-4 text-green-400" />
                           </div>
                         )}
                       </div>
@@ -299,13 +341,26 @@ export default function MangaInfo() {
                           {idx === 0 && sortDesc && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-semibold">New</span>
                           )}
-                          {isPremium && (
+                          {isPremium && !isChapterUnlocked && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 font-semibold border border-amber-500/20">Premium</span>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">{chDate}</p>
-                        {isPremium && (
-                          <p className="text-[10px] text-amber-500 mt-0.5 font-medium">🪙 {ch.coin_price ?? 100} {currencyName}</p>
+                        {isPremium && !isChapterUnlocked && (
+                          <div className="flex items-center gap-1 text-[10px] text-amber-500 mt-0.5 font-medium">
+                            <CurrencyIcon className="w-3 h-3" />
+                            <span>{ch.coin_price ?? 100} {currencyName}</span>
+                          </div>
+                        )}
+                        {isPremium && isChapterUnlocked && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-green-500 mt-0.5 font-medium">
+                            <span>Unlocked</span>
+                            {isTicketUnlock && ticketDaysLeft > 0 && (
+                              <span className="flex items-center gap-0.5 text-muted-foreground">
+                                <Timer className="w-3 h-3" /> {ticketDaysLeft}d
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </Link>
