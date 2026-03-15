@@ -1,1 +1,10 @@
 project_id = "mqtowxaxwanovvjdktpq"
+
+[functions.paypal-purchase]
+verify_jwt = false
+
+[functions.stripe-checkout]
+verify_jwt = false
+
+[functions.nowpayments]
+verify_jwt = false

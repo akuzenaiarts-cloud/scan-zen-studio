@@ -1,11 +1,13 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Coins, ShoppingCart, CreditCard, Wallet, CircleDollarSign, Sparkles, Check, Loader2 } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Coins, ShoppingCart, CreditCard, Wallet, CircleDollarSign, Sparkles, Check, Loader2, Copy, Clock, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePremiumSettings } from '@/hooks/usePremiumSettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const PAYMENT_METHODS = [
   { id: 'stripe', label: 'Card / Stripe', icon: CreditCard },
@@ -17,9 +19,11 @@ export default function CoinShop() {
   const [selectedPkg, setSelectedPkg] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string>('stripe');
   const [processing, setProcessing] = useState(false);
+  const [usdtPayment, setUsdtPayment] = useState<any>(null);
   const { settings } = usePremiumSettings();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const currencyName = settings.coin_system.currency_name;
   const currencyIconUrl = settings.coin_system.currency_icon_url;
@@ -38,6 +42,67 @@ export default function CoinShop() {
   });
 
   const coinBalance = profile?.coin_balance ?? 0;
+
+  // Handle return from PayPal/Stripe
+  useEffect(() => {
+    const status = searchParams.get('status');
+    const paypalOrderId = searchParams.get('paypal_order_id');
+    const stripeSessionId = searchParams.get('stripe_session_id');
+
+    if (status === 'cancelled') {
+      toast.info('Payment was cancelled');
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
+    if (status === 'success' && paypalOrderId) {
+      // Capture PayPal order
+      (async () => {
+        setProcessing(true);
+        try {
+          const { data, error } = await supabase.functions.invoke('paypal-purchase', {
+            body: { action: 'capture-order', orderId: paypalOrderId, coins: 0 },
+          });
+          // Note: coins from metadata would be better, but for now the edge function reads from order
+          if (error || !data?.success) {
+            if (data?.already_processed) {
+              toast.info('This payment was already processed');
+            } else {
+              toast.error(data?.error || 'Payment capture failed');
+            }
+          } else {
+            toast.success(`${data.coins_added} ${currencyName} added to your balance!`);
+            queryClient.invalidateQueries({ queryKey: ['coin-balance'] });
+          }
+        } catch {
+          toast.error('Could not verify payment');
+        }
+        setProcessing(false);
+        setSearchParams({}, { replace: true });
+      })();
+    }
+
+    if (status === 'success' && stripeSessionId) {
+      (async () => {
+        setProcessing(true);
+        try {
+          const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+            body: { action: 'verify-session', sessionId: stripeSessionId },
+          });
+          if (error || !data?.success) {
+            toast.error(data?.error || 'Payment verification failed');
+          } else {
+            toast.success(`${data.coins_added} ${currencyName} added to your balance!`);
+            queryClient.invalidateQueries({ queryKey: ['coin-balance'] });
+          }
+        } catch {
+          toast.error('Could not verify payment');
+        }
+        setProcessing(false);
+        setSearchParams({}, { replace: true });
+      })();
+    }
+  }, []);
 
   const COIN_PACKAGES = useMemo(() => [
     { id: 1, coins: baseAmount, price: basePrice, label: 'Starter' },
@@ -59,24 +124,40 @@ export default function CoinShop() {
 
   const handlePurchase = async () => {
     if (!selected || !user) return;
+    const totalCoins = selected.coins + (selected.bonus || 0);
+    const returnUrl = window.location.origin + '/coin-shop';
 
-    if (paymentMethod === 'paypal') {
+    if (paymentMethod === 'stripe') {
       setProcessing(true);
       try {
-        // Get auth session for edge function call
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          toast.error('Please sign in to make a purchase');
+        const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+          body: {
+            action: 'create-checkout',
+            coins: totalCoins,
+            amount: selected.price,
+            returnUrl,
+          },
+        });
+        if (error || !data?.url) {
+          toast.error(data?.error || 'Failed to create checkout session');
           setProcessing(false);
           return;
         }
-
-        // Step 1: Create PayPal order via edge function
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } catch (err: any) {
+        toast.error(err.message || 'Payment failed');
+        setProcessing(false);
+      }
+    } else if (paymentMethod === 'paypal') {
+      setProcessing(true);
+      try {
         const { data: createData, error: createError } = await supabase.functions.invoke('paypal-purchase', {
           body: {
             action: 'create-order',
-            coins: selected.coins + (selected.bonus || 0),
+            coins: totalCoins,
             amount: selected.price,
+            returnUrl,
           },
         });
 
@@ -86,52 +167,41 @@ export default function CoinShop() {
           return;
         }
 
-        // Step 2: Redirect user to PayPal approval page
-        const paypalOrderId = createData.orderId;
-        
-        // Open PayPal in a new window for approval
-        const approvalUrl = `https://www.paypal.com/checkoutnow?token=${paypalOrderId}`;
-        const popup = window.open(approvalUrl, 'paypal-popup', 'width=500,height=700,scrollbars=yes');
-        
-        // Poll for completion
-        const pollInterval = setInterval(async () => {
-          if (popup?.closed) {
-            clearInterval(pollInterval);
-            // Try to capture the order
-            try {
-              const { data: captureData, error: captureError } = await supabase.functions.invoke('paypal-purchase', {
-                body: {
-                  action: 'capture-order',
-                  orderId: paypalOrderId,
-                  coins: selected.coins + (selected.bonus || 0),
-                },
-              });
-
-              if (captureError || !captureData?.success) {
-                if (captureData?.error?.includes('not completed')) {
-                  toast.info('Payment was not completed');
-                } else {
-                  toast.error(captureData?.error || 'Payment capture failed');
-                }
-              } else {
-                toast.success(`${captureData.coins_added} ${currencyName} added to your balance!`);
-                queryClient.invalidateQueries({ queryKey: ['coin-balance'] });
-                queryClient.invalidateQueries({ queryKey: ['user-balances'] });
-              }
-            } catch {
-              toast.error('Could not verify payment. Please contact support.');
-            }
-            setProcessing(false);
-          }
-        }, 1000);
+        // Use the approve URL from PayPal's response (proper redirect flow)
+        const approveUrl = createData.approveUrl;
+        if (approveUrl) {
+          window.location.href = approveUrl;
+        } else {
+          // Fallback to popup
+          window.location.href = `https://www.paypal.com/checkoutnow?token=${createData.orderId}`;
+        }
       } catch (err: any) {
         toast.error(err.message || 'Payment failed');
         setProcessing(false);
       }
     } else if (paymentMethod === 'usdt') {
-      toast.info('USDT payments require manual verification. Please send the exact amount and submit your transaction hash.');
-    } else {
-      toast.info('Stripe payments coming soon!');
+      setProcessing(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('nowpayments', {
+          body: {
+            action: 'create-payment',
+            coins: totalCoins,
+            amount: selected.price,
+          },
+        });
+
+        if (error || !data?.payAddress) {
+          toast.error(data?.error || 'Failed to create USDT payment');
+          setProcessing(false);
+          return;
+        }
+
+        setUsdtPayment(data);
+        setProcessing(false);
+      } catch (err: any) {
+        toast.error(err.message || 'Payment failed');
+        setProcessing(false);
+      }
     }
   };
 
@@ -266,6 +336,54 @@ export default function CoinShop() {
           <p className="text-sm text-muted-foreground w-full text-center">Select a package above to proceed</p>
         )}
       </div>
+
+      {/* USDT Payment Dialog */}
+      <Dialog open={!!usdtPayment} onOpenChange={(open) => !open && setUsdtPayment(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CircleDollarSign className="w-5 h-5 text-primary" />
+              USDT Payment
+            </DialogTitle>
+          </DialogHeader>
+          {usdtPayment && (
+            <div className="space-y-4">
+              <div className="rounded-xl bg-muted/50 p-4 space-y-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Send exactly</p>
+                  <p className="text-lg font-bold text-foreground">{usdtPayment.payAmount} {usdtPayment.payCurrency?.toUpperCase()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">To this address</p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs bg-background px-2 py-1 rounded border border-border flex-1 break-all">{usdtPayment.payAddress}</code>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="shrink-0 h-8 w-8"
+                      onClick={() => {
+                        navigator.clipboard.writeText(usdtPayment.payAddress);
+                        toast.success('Address copied!');
+                      }}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                {usdtPayment.expirationEstimate && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Clock className="w-3.5 h-3.5" />
+                    Expires: {new Date(usdtPayment.expirationEstimate).toLocaleString()}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Your balance will update automatically once the payment is confirmed on the blockchain. This usually takes 1-5 minutes.
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
