@@ -59,7 +59,7 @@ export default function EditorChoice() {
                     i === current ? 'border-primary scale-105' : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img src={m.cover_url} alt={m.title} className="w-full h-full object-cover" />
+                  <img src={optimizedImageUrl(m.cover_url, 150)} alt={m.title} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
