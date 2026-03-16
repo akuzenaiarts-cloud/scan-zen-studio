@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Pin, ChevronLeft, ChevronRight, Star } from 'lucide-react';
-import { formatViews } from '@/lib/utils';
+import { formatViews, optimizedImageUrl } from '@/lib/utils';
 import { usePinnedManga } from '@/hooks/usePinnedManga';
 import TypeBadge from './TypeBadge';
 
@@ -67,7 +67,7 @@ export default function PinnedCarousel() {
               className="shrink-0 w-[200px] group">
               <div className="relative rounded-lg overflow-hidden aspect-[3/4] bg-secondary">
                 <img
-                  src={manga.cover_url}
+                  src={optimizedImageUrl(manga.cover_url, 300)}
                   alt={manga.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   loading="lazy" />

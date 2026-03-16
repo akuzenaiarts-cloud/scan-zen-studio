@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight, Star } from 'lucide-react';
-import { formatViews } from '@/lib/utils';
+import { formatViews, optimizedImageUrl } from '@/lib/utils';
 import { useCompletedManga } from '@/hooks/useCompletedManga';
 import TypeBadge from './TypeBadge';
 
@@ -43,7 +43,7 @@ export default function CompletedSeries() {
           <Link key={manga.id} to={`/manga/${manga.slug}`} className="group relative block">
             <div className="relative overflow-hidden rounded-lg aspect-[3/4] bg-secondary">
               <img
-                src={manga.cover_url}
+                src={optimizedImageUrl(manga.cover_url, 300)}
                 alt={manga.title}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useAllManga } from '@/hooks/useAllManga';
+import { optimizedImageUrl } from '@/lib/utils';
 import TypeBadge from './TypeBadge';
 
 const statusColors: Record<string, string> = {
@@ -68,7 +69,7 @@ export default function HeroCarousel() {
               >
                 <div className="relative h-[500px] md:h-[550px]">
                   <img
-                    src={manga.cover_url}
+                    src={optimizedImageUrl(manga.cover_url, 500, 80)}
                     alt={manga.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />

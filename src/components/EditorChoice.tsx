@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Award, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { optimizedImageUrl } from '@/lib/utils';
 import { useFeaturedManga } from '@/hooks/useFeaturedManga';
 
 export default function EditorChoice() {
@@ -58,7 +59,7 @@ export default function EditorChoice() {
                     i === current ? 'border-primary scale-105' : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img src={m.cover_url} alt={m.title} className="w-full h-full object-cover" />
+                  <img src={optimizedImageUrl(m.cover_url, 150)} alt={m.title} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -87,7 +88,7 @@ export default function EditorChoice() {
           <div className="hidden md:block relative md:w-[45%] shrink-0 self-stretch">
             <div className="absolute -top-10 -right-2 -bottom-4 -left-2 rounded-2xl overflow-hidden shadow-2xl border border-border/30">
               <img
-                src={manga.cover_url}
+                src={optimizedImageUrl(manga.cover_url, 700, 80)}
                 alt={manga.title}
                 className="w-full h-full object-cover"
               />
@@ -106,7 +107,7 @@ export default function EditorChoice() {
           {/* Mobile Cover */}
           <div className="md:hidden relative w-full h-[200px] sm:h-[250px]">
             <div className="relative w-full h-full rounded-b-xl overflow-hidden">
-              <img src={manga.cover_url} alt={manga.title} className="w-full h-full object-cover" />
+              <img src={optimizedImageUrl(manga.cover_url, 500)} alt={manga.title} className="w-full h-full object-cover" />
               <Link to={`/manga/${manga.slug}`} className="absolute bottom-4 right-4">
                 <Button size="sm" className="gap-2 rounded-lg">
                   <Play className="w-3.5 h-3.5 fill-current" />

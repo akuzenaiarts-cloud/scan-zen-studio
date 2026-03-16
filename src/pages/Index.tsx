@@ -9,6 +9,7 @@ import EditorChoice from '@/components/EditorChoice';
 import CompletedSeries from '@/components/CompletedSeries';
 import TypeBadge from '@/components/TypeBadge';
 import { useAllManga } from '@/hooks/useAllManga';
+import { optimizedImageUrl } from '@/lib/utils';
 
 export default function Index() {
   const { data: allManga = [] } = useAllManga();
@@ -52,7 +53,7 @@ export default function Index() {
             >
               <div className="relative overflow-hidden rounded-lg aspect-[3/4.2] bg-secondary">
                 <img
-                  src={m.cover_url}
+                  src={optimizedImageUrl(m.cover_url, 300)}
                   alt={m.title}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"

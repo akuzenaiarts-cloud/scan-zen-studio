@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { optimizedImageUrl } from '@/lib/utils';
 import SearchModal from './SearchModal';
 import UserMenu from './UserMenu';
 import NotificationMenu from './NotificationMenu';
@@ -52,7 +53,7 @@ export default function Navbar() {
           ) : (
             <Link to="/" className="flex items-center gap-3 group" onClick={() => setMobileOpen(false)}>
               <div className="w-9 h-9 rounded-lg overflow-hidden">
-                <img src={settings.general.logo_url || logoImg} alt={`${siteName} logo`} className="w-full h-full object-contain" />
+                <img src={optimizedImageUrl(settings.general.logo_url || logoImg, 72)} alt={`${siteName} logo`} className="w-full h-full object-contain" />
               </div>
               <span className="font-bold text-xl text-foreground tracking-tight">{siteName}</span>
             </Link>
