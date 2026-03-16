@@ -134,10 +134,10 @@ export const useComments = (mangaId: string | undefined, contextType?: 'manga' |
 
       // Handle @mentions
       if (mentions && mentions.length > 0) {
-        const { data: mentionedProfiles } = await supabase
+        const { data: mentionedProfiles } = await (supabase
           .from('profiles_public' as any)
           .select('id, display_name')
-          .in('display_name', mentions);
+          .in('display_name', mentions)) as any;
 
         if (mentionedProfiles) {
           const notifications = mentionedProfiles
