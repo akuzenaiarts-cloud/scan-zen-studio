@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { optimizedImageUrl } from '@/lib/utils';
 import SearchModal from './SearchModal';
 import UserMenu from './UserMenu';
 import NotificationMenu from './NotificationMenu';
