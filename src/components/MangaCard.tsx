@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Star, Eye } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
-import { formatViews } from '@/lib/utils';
+import { formatViews, optimizedImageUrl } from '@/lib/utils';
 import TypeBadge from './TypeBadge';
 
 type Manga = Tables<"manga">;
