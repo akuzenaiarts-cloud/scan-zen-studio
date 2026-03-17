@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createHmac } from "https://deno.land/std@0.168.0/crypto/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,6 +31,20 @@ function findMatchingPackage(packages: { coins: number; price: number }[], coins
   return packages.find(p => p.coins === coins && Math.abs(p.price - amount) < 0.01);
 }
 
+async function getNowPaymentsCredentials(supabase: any): Promise<{ apiKey: string | null; ipnSecret: string | null }> {
+  const { data: settingsRow } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "premium_general")
+    .single();
+
+  const s = settingsRow?.value as any;
+  return {
+    apiKey: s?.payment_nowpayments_api_key || Deno.env.get("NOWPAYMENTS_API_KEY") || null,
+    ipnSecret: s?.payment_nowpayments_ipn_secret || Deno.env.get("NOWPAYMENTS_IPN_SECRET") || null,
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -47,10 +60,9 @@ serve(async (req) => {
 
     // Webhook endpoint (no auth required - verified by signature)
     if (path === "webhook") {
-      // Fail closed: require IPN secret to be configured
-      const ipnSecret = Deno.env.get("NOWPAYMENTS_IPN_SECRET");
+      const { ipnSecret } = await getNowPaymentsCredentials(supabase);
       if (!ipnSecret) {
-        console.error("NOWPAYMENTS_IPN_SECRET not configured — rejecting webhook");
+        console.error("NOWPayments IPN Secret not configured — rejecting webhook");
         return new Response(JSON.stringify({ error: "Webhook not configured" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -59,13 +71,12 @@ serve(async (req) => {
 
       const body = await req.json();
 
-      // Always validate signature
       const sig = req.headers.get("x-nowpayments-sig");
       const sortedBody = Object.keys(body).sort().reduce((obj: any, key: string) => {
         obj[key] = body[key];
         return obj;
       }, {});
-      
+
       const encoder = new TextEncoder();
       const key = await crypto.subtle.importKey(
         "raw",
@@ -90,16 +101,14 @@ serve(async (req) => {
         });
       }
 
-      // Process payment
       if (body.payment_status === "finished" || body.payment_status === "confirmed") {
-        const orderId = body.order_id; // format: "userId_coins_timestamp"
+        const orderId = body.order_id;
         if (orderId) {
           const parts = orderId.split("_");
           const userId = parts[0];
           const coins = parseInt(parts[1] || "0");
 
           if (userId && coins > 0) {
-            // Validate coins against server-side packages
             const validPackages = await getValidCoinPackages(supabase);
             const isValidCoinAmount = validPackages.some(p => p.coins === coins);
             if (!isValidCoinAmount) {
@@ -110,7 +119,6 @@ serve(async (req) => {
               });
             }
 
-            // Prevent double-processing
             const processKey = `nowpay_${body.payment_id}`;
             const { data: existing } = await supabase
               .from("site_settings")
@@ -169,10 +177,10 @@ serve(async (req) => {
     const reqBody = await req.json();
     const { action } = reqBody;
 
-    const apiKey = Deno.env.get("NOWPAYMENTS_API_KEY");
+    const { apiKey } = await getNowPaymentsCredentials(supabase);
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: "NOWPayments not configured. Add NOWPAYMENTS_API_KEY secret." }),
+        JSON.stringify({ error: "NOWPayments not configured. Add your API Key in Admin Panel → Premium Content." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -180,7 +188,6 @@ serve(async (req) => {
     if (action === "create-payment") {
       const { coins, amount } = reqBody;
 
-      // Validate coins/amount against server-side packages
       const validPackages = await getValidCoinPackages(supabase);
       const matched = findMatchingPackage(validPackages, coins, amount);
       if (!matched) {
@@ -191,8 +198,6 @@ serve(async (req) => {
       }
 
       const orderId = `${user.id}_${matched.coins}_${Date.now()}`;
-      
-      // Get the webhook URL
       const webhookUrl = `${supabaseUrl}/functions/v1/nowpayments/webhook`;
 
       const paymentRes = await fetch(`${NOWPAYMENTS_API}/payment`, {
@@ -202,7 +207,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          price_amount: matched.price, // Use server-validated price
+          price_amount: matched.price,
           price_currency: "usd",
           pay_currency: "usdttrc20",
           order_id: orderId,

@@ -7,6 +7,7 @@ import {
   Database, Palette, Link2, ExternalLink, Crown, X
 } from 'lucide-react';
 import PremiumContent from '@/pages/admin/PremiumContent';
+import { StorageSection } from '@/components/admin/StorageSection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -751,59 +752,10 @@ export default function AdminPanel() {
 
             {/* Storage */}
             {settingsSubTab === 'storage' && (
-              <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-                <h3 className="font-semibold flex items-center gap-2"><Database className="w-4 h-4" /> Storage Provider</h3>
-                <p className="text-sm text-muted-foreground">
-                  Choose where to store uploaded images. Blogger uses Google's CDN for free unlimited image hosting.
-                </p>
-
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { id: 'supabase', label: 'Supabase Storage', desc: 'Default storage (limited by plan)' },
-                    { id: 'blogger', label: 'Blogger CDN', desc: 'Free unlimited via Google CDN' },
-                  ].map(opt => (
-                    <button
-                      key={opt.id}
-                      onClick={() => setSettingsForm(s => ({ ...s, storage_provider: opt.id }))}
-                      className={`p-4 rounded-xl border-2 text-left transition-all ${
-                        settingsForm.storage_provider === opt.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/30'
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">{opt.label}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
-                    </button>
-                  ))}
-                </div>
-
-                {settingsForm.storage_provider === 'blogger' && (
-                  <div className="space-y-3 pt-2 border-t border-border">
-                    <p className="text-xs text-muted-foreground">
-                      Create a Blogger blog for image hosting, then enter your Blog ID and API key below.
-                    </p>
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Blog ID</label>
-                      <Input
-                        value={settingsForm.blogger_blog_id}
-                        onChange={e => setSettingsForm(s => ({ ...s, blogger_blog_id: e.target.value }))}
-                        className="rounded-xl bg-background"
-                        placeholder="e.g. 1234567890"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Blogger API Key / OAuth Token</label>
-                      <Input
-                        type="password"
-                        value={settingsForm.blogger_api_key}
-                        onChange={e => setSettingsForm(s => ({ ...s, blogger_api_key: e.target.value }))}
-                        className="rounded-xl bg-background"
-                        placeholder="Your API key or OAuth access token"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
+              <StorageSection
+                settingsForm={settingsForm}
+                setSettingsForm={setSettingsForm}
+              />
             )}
 
             <div className="flex gap-2">

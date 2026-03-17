@@ -39,7 +39,6 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -48,10 +47,7 @@ serve(async (req) => {
       });
     }
 
-    const anonClient = createClient(
-      supabaseUrl,
-      Deno.env.get("SUPABASE_ANON_KEY")!
-    );
+    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
     const { data: { user }, error: authError } = await anonClient.auth.getUser(
       authHeader.replace("Bearer ", "")
     );
@@ -75,16 +71,19 @@ serve(async (req) => {
     const settings = settingsRow?.value as any;
     const clientId = settings?.payment_paypal_client_id;
     const clientSecret = settings?.payment_paypal_secret;
+    const isSandbox = settings?.payment_paypal_sandbox ?? false;
 
     if (!clientId || !clientSecret) {
       return new Response(
-        JSON.stringify({ error: "PayPal not configured" }),
+        JSON.stringify({ error: "PayPal not configured. Add your PayPal credentials in Admin Panel → Premium Content." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // PayPal API base URL (live)
-    const paypalBase = "https://api-m.paypal.com";
+    // Use sandbox or live API based on admin setting
+    const paypalBase = isSandbox
+      ? "https://api-m.sandbox.paypal.com"
+      : "https://api-m.paypal.com";
 
     // Get PayPal access token
     const tokenRes = await fetch(`${paypalBase}/v1/oauth2/token`, {
@@ -105,7 +104,6 @@ serve(async (req) => {
     const accessToken = tokenData.access_token;
 
     if (action === "create-order") {
-      // Validate coins/amount against server-side packages
       const validPackages = await getValidCoinPackages(supabase);
       const matched = findMatchingPackage(validPackages, coins, amount);
       if (!matched) {
@@ -116,7 +114,7 @@ serve(async (req) => {
       }
 
       const baseReturnUrl = returnUrl || "https://scan-zen-studio.lovable.app/coin-shop";
-      
+
       const orderRes = await fetch(`${paypalBase}/v2/checkout/orders`, {
         method: "POST",
         headers: {
@@ -129,10 +127,10 @@ serve(async (req) => {
             {
               amount: {
                 currency_code: "USD",
-                value: matched.price.toFixed(2), // Use server-validated price
+                value: matched.price.toFixed(2),
               },
               description: `${matched.coins} coins purchase`,
-              custom_id: `${user.id}_${matched.coins}`, // Store coins in custom_id for capture verification
+              custom_id: `${user.id}_${matched.coins}`,
             },
           ],
           application_context: {
@@ -145,10 +143,10 @@ serve(async (req) => {
         }),
       });
       const orderData = await orderRes.json();
-      
+
       if (orderData.id) {
         const approveLink = orderData.links?.find((l: any) => l.rel === "approve")?.href;
-        
+
         return new Response(
           JSON.stringify({ orderId: orderData.id, approveUrl: approveLink }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -175,10 +173,9 @@ serve(async (req) => {
       const captureData = await captureRes.json();
 
       if (captureData.status === "COMPLETED") {
-        // Extract coins from the order's custom_id (set server-side at creation), NOT from client body
         const customId = captureData.purchase_units?.[0]?.payments?.captures?.[0]?.custom_id
           || captureData.purchase_units?.[0]?.custom_id;
-        
+
         if (!customId) {
           return new Response(
             JSON.stringify({ error: "Missing order metadata" }),
@@ -190,7 +187,6 @@ serve(async (req) => {
         const orderUserId = parts[0];
         const orderCoins = parseInt(parts[1] || "0");
 
-        // Verify the capturing user matches the order creator
         if (orderUserId !== user.id || orderCoins <= 0) {
           return new Response(
             JSON.stringify({ error: "Order mismatch or invalid coins" }),
@@ -198,7 +194,6 @@ serve(async (req) => {
           );
         }
 
-        // Prevent double-processing
         const processKey = `paypal_order_${orderId}`;
         const { data: existing } = await supabase
           .from("site_settings")
@@ -213,7 +208,6 @@ serve(async (req) => {
           );
         }
 
-        // Credit coins
         const { data: profile } = await supabase
           .from("profiles")
           .select("coin_balance")
@@ -226,7 +220,6 @@ serve(async (req) => {
           .update({ coin_balance: currentBalance + orderCoins })
           .eq("id", user.id);
 
-        // Mark as processed
         await supabase.from("site_settings").upsert({
           key: processKey,
           value: { processed: true, coins: orderCoins, user_id: user.id },

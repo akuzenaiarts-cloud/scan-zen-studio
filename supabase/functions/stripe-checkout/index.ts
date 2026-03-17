@@ -19,7 +19,6 @@ async function getValidCoinPackages(supabase: any): Promise<{ coins: number; pri
   const baseAmount = settings?.base_amount || 50;
   const basePrice = settings?.base_price || 0.99;
 
-  // Generate valid packages: 1x, 2x, 5x, 10x, 20x multipliers
   const multipliers = [1, 3, 7, 15, 32, 100];
   return multipliers.map(m => ({
     coins: baseAmount * m,
@@ -29,6 +28,20 @@ async function getValidCoinPackages(supabase: any): Promise<{ coins: number; pri
 
 function findMatchingPackage(packages: { coins: number; price: number }[], coins: number, amount: number) {
   return packages.find(p => p.coins === coins && Math.abs(p.price - amount) < 0.01);
+}
+
+async function getStripeKey(supabase: any): Promise<string | null> {
+  // Try site_settings first (admin-configured), then fall back to env var
+  const { data: settingsRow } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "premium_general")
+    .single();
+
+  const fromSettings = (settingsRow?.value as any)?.payment_stripe_secret_key;
+  if (fromSettings) return fromSettings;
+
+  return Deno.env.get("STRIPE_SECRET_KEY") || null;
 }
 
 serve(async (req) => {
@@ -63,10 +76,10 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    const stripeKey = await getStripeKey(supabase);
     if (!stripeKey) {
       return new Response(
-        JSON.stringify({ error: "Stripe not configured" }),
+        JSON.stringify({ error: "Stripe not configured. Add your Stripe Secret Key in Admin Panel → Premium Content." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -76,7 +89,6 @@ serve(async (req) => {
     if (action === "create-checkout") {
       const { coins, amount, returnUrl } = body;
 
-      // Validate coins/amount against server-side packages
       const validPackages = await getValidCoinPackages(supabase);
       const matched = findMatchingPackage(validPackages, coins, amount);
       if (!matched) {
@@ -88,7 +100,6 @@ serve(async (req) => {
 
       const baseUrl = returnUrl || "https://scan-zen-studio.lovable.app/coin-shop";
 
-      // Find or create Stripe customer
       const customers = await stripe.customers.list({ email: user.email, limit: 1 });
       let customerId: string;
       if (customers.data.length > 0) {
@@ -111,7 +122,7 @@ serve(async (req) => {
                 name: `${matched.coins} Coins`,
                 description: `Purchase ${matched.coins} coins for your account`,
               },
-              unit_amount: Math.round(matched.price * 100), // cents — use server-validated price
+              unit_amount: Math.round(matched.price * 100),
             },
             quantity: 1,
           },
@@ -146,7 +157,6 @@ serve(async (req) => {
           );
         }
 
-        // Prevent double-crediting: check if we already processed this session
         const sessionKey = `stripe_session_${sessionId}`;
         const { data: existing } = await supabase
           .from("site_settings")
@@ -161,7 +171,6 @@ serve(async (req) => {
           );
         }
 
-        // Credit coins
         const { data: profile } = await supabase
           .from("profiles")
           .select("coin_balance")
@@ -174,7 +183,6 @@ serve(async (req) => {
           .update({ coin_balance: currentBalance + coins })
           .eq("id", userId);
 
-        // Mark session as processed
         await supabase
           .from("site_settings")
           .upsert({ key: sessionKey, value: { processed: true, coins, user_id: userId }, updated_at: new Date().toISOString() });

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   Crown, Settings, Coins, Ticket, CreditCard, Wallet, CircleDollarSign,
-  Check, Upload, Save, Info, MessageSquare, Gift, Image
+  Check, Upload, Save, Info, MessageSquare, Gift, Image, ChevronDown, ChevronUp,
+  ExternalLink, AlertTriangle, BookOpen, Key, Globe, Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,12 +21,6 @@ const SUB_TABS: { id: SubTab; label: string; icon: React.ReactNode }[] = [
   { id: 'subscriptions', label: 'Subscription System', icon: <Crown className="w-3.5 h-3.5" /> },
 ];
 
-const PAYMENT_METHODS = [
-  { id: 'stripe', label: 'Card / Credit Card', icon: CreditCard },
-  { id: 'paypal', label: 'PayPal', icon: Wallet },
-  { id: 'usdt', label: 'USDT', icon: CircleDollarSign },
-] as const;
-
 export default function PremiumContent() {
   const { settings, updatePremiumSettings } = usePremiumSettings();
   const [subTab, setSubTab] = useState<SubTab>('general');
@@ -33,13 +28,31 @@ export default function PremiumContent() {
   // General form
   const [enableCoins, setEnableCoins] = useState(true);
   const [enableSubs, setEnableSubs] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<string>('stripe');
+
+  // Payment method toggles
+  const [enableStripe, setEnableStripe] = useState(false);
+  const [enablePaypal, setEnablePaypal] = useState(false);
+  const [enableUsdt, setEnableUsdt] = useState(false);
+
+  // Stripe
   const [stripePublicKey, setStripePublicKey] = useState('');
   const [stripeSecretKey, setStripeSecretKey] = useState('');
+
+  // PayPal
   const [paypalClientId, setPaypalClientId] = useState('');
   const [paypalSecret, setPaypalSecret] = useState('');
+  const [paypalSandbox, setPaypalSandbox] = useState(false);
+
+  // USDT / NOWPayments
   const [usdtAddress, setUsdtAddress] = useState('');
   const [usdtNetwork, setUsdtNetwork] = useState<'TRC20' | 'ERC20'>('TRC20');
+  const [nowpaymentsApiKey, setNowpaymentsApiKey] = useState('');
+  const [nowpaymentsIpnSecret, setNowpaymentsIpnSecret] = useState('');
+
+  // Tutorial expansion
+  const [stripeTutorialOpen, setStripeTutorialOpen] = useState(false);
+  const [paypalTutorialOpen, setPaypalTutorialOpen] = useState(false);
+  const [usdtTutorialOpen, setUsdtTutorialOpen] = useState(false);
 
   // Coin system form
   const [currencyName, setCurrencyName] = useState('Coins');
@@ -67,6 +80,12 @@ export default function PremiumContent() {
       setPaypalSecret(g.payment_paypal_secret);
       setUsdtAddress(g.payment_usdt_address);
       setUsdtNetwork(g.payment_usdt_network);
+      setEnableStripe((g as any).enable_stripe ?? (!!g.payment_stripe_public_key && !!g.payment_stripe_secret_key));
+      setEnablePaypal((g as any).enable_paypal ?? (!!g.payment_paypal_client_id && !!g.payment_paypal_secret));
+      setEnableUsdt((g as any).enable_usdt ?? !!g.payment_usdt_address);
+      setPaypalSandbox((g as any).payment_paypal_sandbox ?? false);
+      setNowpaymentsApiKey((g as any).payment_nowpayments_api_key ?? '');
+      setNowpaymentsIpnSecret((g as any).payment_nowpayments_ipn_secret ?? '');
 
       const c = settings.coin_system;
       setCurrencyName(c.currency_name);
@@ -90,12 +109,18 @@ export default function PremiumContent() {
         value: {
           enable_coins: enableCoins,
           enable_subscriptions: enableSubs,
+          enable_stripe: enableStripe,
+          enable_paypal: enablePaypal,
+          enable_usdt: enableUsdt,
           payment_stripe_public_key: stripePublicKey,
           payment_stripe_secret_key: stripeSecretKey,
           payment_paypal_client_id: paypalClientId,
           payment_paypal_secret: paypalSecret,
+          payment_paypal_sandbox: paypalSandbox,
           payment_usdt_address: usdtAddress,
           payment_usdt_network: usdtNetwork,
+          payment_nowpayments_api_key: nowpaymentsApiKey,
+          payment_nowpayments_ipn_secret: nowpaymentsIpnSecret,
         },
       });
       toast.success('General settings saved');
@@ -157,13 +182,8 @@ export default function PremiumContent() {
     setIconUploading(false);
   };
 
-  // Pricing tiers
   const pricePerUnit = baseAmount > 0 ? basePrice / baseAmount : 0;
   const TIERS = [50, 100, 250, 500, 1000];
-
-  const isStripeConnected = !!stripePublicKey && !!stripeSecretKey;
-  const isPaypalConnected = !!paypalClientId && !!paypalSecret;
-  const isUsdtConfigured = !!usdtAddress;
 
   const CurrencyIcon = ({ className }: { className?: string }) =>
     currencyIconUrl ? (
@@ -171,6 +191,20 @@ export default function PremiumContent() {
     ) : (
       <Coins className={className} />
     );
+
+  const TutorialToggle = ({ open, onToggle, label }: { open: boolean; onToggle: () => void; label: string }) => (
+    <button onClick={onToggle} className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium mt-2 transition-colors">
+      <BookOpen className="w-3.5 h-3.5" />
+      {label}
+      {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+    </button>
+  );
+
+  const StatusBadge = ({ configured, enabled }: { configured: boolean; enabled: boolean }) => {
+    if (!enabled) return <span className="text-[10px] font-semibold bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Disabled</span>;
+    if (configured) return <span className="text-[10px] font-semibold bg-emerald-500/15 text-emerald-500 px-2 py-0.5 rounded-full">Active</span>;
+    return <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-500 px-2 py-0.5 rounded-full">Not Configured</span>;
+  };
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -197,6 +231,7 @@ export default function PremiumContent() {
       {/* ─── GENERAL TAB ─── */}
       {subTab === 'general' && (
         <div className="space-y-4">
+          {/* Premium Features toggles */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <h3 className="font-semibold flex items-center gap-2"><Crown className="w-4 h-4" /> Premium Features</h3>
             <div className="space-y-3">
@@ -217,90 +252,186 @@ export default function PremiumContent() {
             </div>
           </div>
 
+          {/* ─── STRIPE ─── */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-            <h3 className="font-semibold flex items-center gap-2"><CreditCard className="w-4 h-4" /> Payment Methods</h3>
-
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              {PAYMENT_METHODS.map((method) => {
-                const isActive = selectedPayment === method.id;
-                const connected = method.id === 'stripe' ? isStripeConnected : method.id === 'paypal' ? isPaypalConnected : isUsdtConfigured;
-                return (
-                  <button
-                    key={method.id}
-                    onClick={() => setSelectedPayment(method.id)}
-                    className={`flex items-center gap-3 rounded-xl border px-4 py-3 sm:flex-1 transition-all duration-200 ${
-                      isActive
-                        ? 'border-primary bg-primary/[0.05] ring-1 ring-primary/30'
-                        : 'border-border/60 bg-card hover:border-border'
-                    }`}
-                  >
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isActive ? 'bg-primary/15' : 'bg-muted/50'}`}>
-                      <method.icon className={`w-4 h-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                    </div>
-                    <span className={`text-sm font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {method.label}
-                    </span>
-                    {connected && (
-                      <span className="ml-auto text-[10px] font-semibold bg-emerald-500/15 text-emerald-500 px-2 py-0.5 rounded-full">
-                        {method.id === 'usdt' ? 'Configured' : 'Connected'}
-                      </span>
-                    )}
-                    {isActive && !connected && (
-                      <div className="ml-auto w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <CreditCard className="w-4.5 h-4.5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">Stripe (Card Payments)</h3>
+                  <p className="text-xs text-muted-foreground">Accept credit/debit card payments</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <StatusBadge configured={!!stripePublicKey && !!stripeSecretKey} enabled={enableStripe} />
+                <Switch checked={enableStripe} onCheckedChange={setEnableStripe} />
+              </div>
             </div>
 
-            {selectedPayment === 'stripe' && (
-              <div className="space-y-3 pt-2 border-t border-border">
+            {enableStripe && (
+              <div className="space-y-3 pt-3 border-t border-border">
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Public Key</label>
-                  <Input value={stripePublicKey} onChange={e => setStripePublicKey(e.target.value)} className="rounded-xl bg-background" placeholder="pk_live_..." />
+                  <label className="text-sm font-medium mb-1 block">Publishable Key</label>
+                  <Input value={stripePublicKey} onChange={e => setStripePublicKey(e.target.value)} className="rounded-xl bg-background font-mono text-xs" placeholder="pk_live_..." />
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">Secret Key</label>
-                  <Input type="password" value={stripeSecretKey} onChange={e => setStripeSecretKey(e.target.value)} className="rounded-xl bg-background" placeholder="sk_live_..." />
+                  <Input type="password" value={stripeSecretKey} onChange={e => setStripeSecretKey(e.target.value)} className="rounded-xl bg-background font-mono text-xs" placeholder="sk_live_..." />
                 </div>
+
+                <TutorialToggle open={stripeTutorialOpen} onToggle={() => setStripeTutorialOpen(!stripeTutorialOpen)} label="How to get Stripe keys" />
+                {stripeTutorialOpen && (
+                  <div className="bg-muted/30 rounded-xl p-4 space-y-2 text-sm text-muted-foreground border border-border/40">
+                    <p className="font-semibold text-foreground text-xs uppercase tracking-wider">Setup Guide</p>
+                    <ol className="list-decimal list-inside space-y-1.5 text-xs">
+                      <li>Go to <a href="https://dashboard.stripe.com/register" target="_blank" rel="noopener" className="text-primary underline">dashboard.stripe.com</a> and create an account.</li>
+                      <li>Complete business verification (Stripe will ask for business details).</li>
+                      <li>Navigate to <strong>Developers → API Keys</strong> in the Stripe dashboard.</li>
+                      <li>Copy the <strong>Publishable key</strong> (starts with <code className="bg-muted px-1 rounded">pk_live_</code>).</li>
+                      <li>Click <strong>"Reveal live key"</strong> to copy the <strong>Secret key</strong> (starts with <code className="bg-muted px-1 rounded">sk_live_</code>).</li>
+                      <li>Paste both keys above and click <strong>Save</strong>.</li>
+                    </ol>
+                    <div className="flex items-start gap-2 p-2 bg-amber-500/10 rounded-lg mt-2">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                      <p className="text-xs text-amber-600 dark:text-amber-400">For testing, use <code className="bg-muted px-1 rounded">pk_test_</code> and <code className="bg-muted px-1 rounded">sk_test_</code> keys from Stripe's test mode. Switch to live keys when ready for real payments.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+          </div>
 
-            {selectedPayment === 'paypal' && (
-              <div className="space-y-3 pt-2 border-t border-border">
-                <p className="text-xs text-muted-foreground">Create your PayPal app at developer.paypal.com → My Apps & Credentials</p>
+          {/* ─── PAYPAL ─── */}
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Wallet className="w-4.5 h-4.5 text-blue-500" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">PayPal</h3>
+                  <p className="text-xs text-muted-foreground">Accept PayPal payments</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <StatusBadge configured={!!paypalClientId && !!paypalSecret} enabled={enablePaypal} />
+                <Switch checked={enablePaypal} onCheckedChange={setEnablePaypal} />
+              </div>
+            </div>
+
+            {enablePaypal && (
+              <div className="space-y-3 pt-3 border-t border-border">
+                <div className="flex items-center justify-between p-2.5 bg-muted/30 rounded-lg">
+                  <div>
+                    <p className="text-xs font-medium">Sandbox Mode (Testing)</p>
+                    <p className="text-[10px] text-muted-foreground">Use sandbox credentials for testing</p>
+                  </div>
+                  <Switch checked={paypalSandbox} onCheckedChange={setPaypalSandbox} />
+                </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">Client ID</label>
-                  <Input value={paypalClientId} onChange={e => setPaypalClientId(e.target.value)} className="rounded-xl bg-background" placeholder="AX..." />
+                  <Input value={paypalClientId} onChange={e => setPaypalClientId(e.target.value)} className="rounded-xl bg-background font-mono text-xs" placeholder="AX..." />
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">Secret</label>
-                  <Input type="password" value={paypalSecret} onChange={e => setPaypalSecret(e.target.value)} className="rounded-xl bg-background" placeholder="EL..." />
+                  <Input type="password" value={paypalSecret} onChange={e => setPaypalSecret(e.target.value)} className="rounded-xl bg-background font-mono text-xs" placeholder="EL..." />
                 </div>
+
+                <TutorialToggle open={paypalTutorialOpen} onToggle={() => setPaypalTutorialOpen(!paypalTutorialOpen)} label="How to get PayPal credentials" />
+                {paypalTutorialOpen && (
+                  <div className="bg-muted/30 rounded-xl p-4 space-y-2 text-sm text-muted-foreground border border-border/40">
+                    <p className="font-semibold text-foreground text-xs uppercase tracking-wider">Setup Guide</p>
+                    <ol className="list-decimal list-inside space-y-1.5 text-xs">
+                      <li>Go to <a href="https://developer.paypal.com" target="_blank" rel="noopener" className="text-primary underline">developer.paypal.com</a> and log in with your PayPal account.</li>
+                      <li>Navigate to <strong>Apps & Credentials</strong> in the developer dashboard.</li>
+                      <li>Click <strong>"Create App"</strong> and give it a name (e.g., "My Manga Site").</li>
+                      <li>Select <strong>"Merchant"</strong> as the app type and click Create.</li>
+                      <li>Copy the <strong>Client ID</strong> shown on the app page.</li>
+                      <li>Click <strong>"Show"</strong> under Secret to reveal and copy the <strong>Secret</strong>.</li>
+                      <li>For testing: toggle to <strong>Sandbox</strong> mode at the top of the page and use sandbox credentials. Enable the "Sandbox Mode" toggle above.</li>
+                      <li>For live payments: toggle to <strong>Live</strong> mode and use live credentials. Disable "Sandbox Mode" above.</li>
+                    </ol>
+                    <div className="flex items-start gap-2 p-2 bg-blue-500/10 rounded-lg mt-2">
+                      <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
+                      <p className="text-xs text-blue-600 dark:text-blue-400">PayPal sandbox lets you test with fake money. Create sandbox buyer/seller accounts at developer.paypal.com → Sandbox → Accounts.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+          </div>
 
-            {selectedPayment === 'usdt' && (
-              <div className="space-y-3 pt-2 border-t border-border">
-                <p className="text-xs text-muted-foreground">Users will send USDT to this address and submit their transaction hash for manual verification.</p>
+          {/* ─── USDT / NOWPayments ─── */}
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                  <CircleDollarSign className="w-4.5 h-4.5 text-emerald-500" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">USDT (Crypto via NOWPayments)</h3>
+                  <p className="text-xs text-muted-foreground">Accept USDT cryptocurrency payments</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <StatusBadge configured={!!nowpaymentsApiKey} enabled={enableUsdt} />
+                <Switch checked={enableUsdt} onCheckedChange={setEnableUsdt} />
+              </div>
+            </div>
+
+            {enableUsdt && (
+              <div className="space-y-3 pt-3 border-t border-border">
                 <div>
                   <label className="text-sm font-medium mb-1 block">Network</label>
                   <Select value={usdtNetwork} onValueChange={(v) => setUsdtNetwork(v as 'TRC20' | 'ERC20')}>
-                    <SelectTrigger className="rounded-xl bg-background w-40">
+                    <SelectTrigger className="rounded-xl bg-background w-48">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="TRC20">TRC20 (Tron)</SelectItem>
+                      <SelectItem value="TRC20">TRC20 (Tron) — Lower fees</SelectItem>
                       <SelectItem value="ERC20">ERC20 (Ethereum)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Wallet Address</label>
-                  <Input value={usdtAddress} onChange={e => setUsdtAddress(e.target.value)} className="rounded-xl bg-background" placeholder="T... or 0x..." />
+                  <label className="text-sm font-medium mb-1 block">Wallet Address (for display)</label>
+                  <Input value={usdtAddress} onChange={e => setUsdtAddress(e.target.value)} className="rounded-xl bg-background font-mono text-xs" placeholder="T... or 0x..." />
                 </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">NOWPayments API Key</label>
+                  <Input type="password" value={nowpaymentsApiKey} onChange={e => setNowpaymentsApiKey(e.target.value)} className="rounded-xl bg-background font-mono text-xs" placeholder="Your NOWPayments API key" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">NOWPayments IPN Secret</label>
+                  <Input type="password" value={nowpaymentsIpnSecret} onChange={e => setNowpaymentsIpnSecret(e.target.value)} className="rounded-xl bg-background font-mono text-xs" placeholder="Your IPN callback secret" />
+                  <p className="text-[10px] text-muted-foreground mt-1">Used to verify webhook callbacks. Found in NOWPayments dashboard → Payment Settings.</p>
+                </div>
+
+                <TutorialToggle open={usdtTutorialOpen} onToggle={() => setUsdtTutorialOpen(!usdtTutorialOpen)} label="How to set up NOWPayments" />
+                {usdtTutorialOpen && (
+                  <div className="bg-muted/30 rounded-xl p-4 space-y-2 text-sm text-muted-foreground border border-border/40">
+                    <p className="font-semibold text-foreground text-xs uppercase tracking-wider">Setup Guide</p>
+                    <ol className="list-decimal list-inside space-y-1.5 text-xs">
+                      <li>Go to <a href="https://nowpayments.io" target="_blank" rel="noopener" className="text-primary underline">nowpayments.io</a> and create an account.</li>
+                      <li>Navigate to <strong>Store Settings</strong> and add your website URL.</li>
+                      <li>Go to <strong>Payment Settings</strong> and set your payout wallet address for USDT.</li>
+                      <li>Navigate to <strong>API</strong> section and click <strong>"Generate API Key"</strong>. Copy it.</li>
+                      <li>In <strong>Payment Settings → IPN</strong>, set the <strong>IPN Callback URL</strong> to:<br />
+                        <code className="bg-muted px-1.5 py-0.5 rounded text-[10px] break-all block mt-1">
+                          https://mqtowxaxwanovvjdktpq.supabase.co/functions/v1/nowpayments/webhook
+                        </code>
+                      </li>
+                      <li>Copy the <strong>IPN Secret</strong> shown on the same page.</li>
+                      <li>Paste the API Key and IPN Secret above and click <strong>Save</strong>.</li>
+                    </ol>
+                    <div className="flex items-start gap-2 p-2 bg-emerald-500/10 rounded-lg mt-2">
+                      <Shield className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400">The IPN Secret is critical for security — it verifies that webhook callbacks are actually from NOWPayments and not forged.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -314,21 +445,17 @@ export default function PremiumContent() {
       {/* ─── COIN SYSTEM TAB ─── */}
       {subTab === 'coins' && (
         <div className="space-y-4">
-          {/* Branding Section */}
           <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
             <div>
               <h3 className="font-semibold flex items-center gap-2 text-base"><Coins className="w-4 h-4" /> Coin System Branding</h3>
               <p className="text-sm text-muted-foreground mt-0.5">Customize your site's currency name and icon.</p>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left: Form */}
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-semibold mb-1.5 block">Currency Name</label>
                   <Input value={currencyName} onChange={e => setCurrencyName(e.target.value)} className="rounded-xl bg-background" placeholder="Coins" />
                 </div>
-
                 <div>
                   <label className="text-sm font-semibold mb-1.5 block">Currency Icon</label>
                   <div className="flex items-center gap-3">
@@ -347,8 +474,6 @@ export default function PremiumContent() {
                   <p className="text-xs text-muted-foreground mt-1.5">Square image (64×64px) recommended.</p>
                 </div>
               </div>
-
-              {/* Right: Preview */}
               <div className="flex flex-col items-center justify-center rounded-xl bg-muted/30 border border-border/40 p-6">
                 <div className="w-16 h-16 rounded-2xl bg-amber-500/15 flex items-center justify-center mb-3">
                   <CurrencyIcon className="w-10 h-10 text-amber-500" />
@@ -362,15 +487,12 @@ export default function PremiumContent() {
             </div>
           </div>
 
-          {/* Base Currency Rate */}
           <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
             <div>
               <h3 className="font-semibold flex items-center gap-2 text-base"><CircleDollarSign className="w-4 h-4" /> Base Currency Rate</h3>
               <p className="text-sm text-muted-foreground mt-0.5">Set the fundamental value of your currency.</p>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left: Input */}
               <div className="flex items-end gap-3">
                 <div>
                   <label className="text-sm font-semibold mb-1.5 block">Amount</label>
@@ -385,8 +507,6 @@ export default function PremiumContent() {
                   </div>
                 </div>
               </div>
-
-              {/* Right: Pricing Preview Table */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-2 text-center">Calculated Pricing Preview</p>
                 <div className="bg-muted/30 rounded-xl overflow-hidden border border-border/40">
@@ -417,13 +537,12 @@ export default function PremiumContent() {
       {/* ─── TOKEN SYSTEM TAB ─── */}
       {subTab === 'tokens' && (
         <div className="space-y-4">
-          {/* Daily Check-in */}
           <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
             <div>
               <h3 className="font-semibold flex items-center gap-2 text-base"><Gift className="w-4 h-4" /> Daily Check-in Reward</h3>
               <p className="text-sm text-muted-foreground mt-0.5">Configure rewards for daily user engagement.</p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-semibold mb-1.5 block">Reward Amount (Tokens)</label>
                 <Input type="number" value={checkinReward} onChange={e => setCheckinReward(Math.max(1, parseInt(e.target.value) || 1))} className="rounded-xl bg-background" />
@@ -435,7 +554,6 @@ export default function PremiumContent() {
             </div>
           </div>
 
-          {/* Comment Streak Mission */}
           <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
             <div>
               <h3 className="font-semibold flex items-center gap-2 text-base">
@@ -443,7 +561,6 @@ export default function PremiumContent() {
               </h3>
               <p className="text-sm text-muted-foreground mt-0.5">Reward users for commenting multiple days in a row.</p>
             </div>
-
             <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
               <div>
                 <p className="text-sm font-semibold">Enable Comment Streak Mission</p>
@@ -451,9 +568,8 @@ export default function PremiumContent() {
               </div>
               <Switch checked={commentStreakEnabled} onCheckedChange={setCommentStreakEnabled} />
             </div>
-
             {commentStreakEnabled && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold mb-1.5 block">Tokens awarded for streak</label>
                   <Input type="number" value={commentStreakReward} onChange={e => setCommentStreakReward(Math.max(1, parseInt(e.target.value) || 1))} className="rounded-xl bg-background" />
@@ -466,7 +582,6 @@ export default function PremiumContent() {
             )}
           </div>
 
-          {/* Token Value Information */}
           <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
