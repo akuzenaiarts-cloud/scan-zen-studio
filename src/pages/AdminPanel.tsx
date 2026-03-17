@@ -7,6 +7,7 @@ import {
   Database, Palette, Link2, ExternalLink, Crown, X
 } from 'lucide-react';
 import PremiumContent from '@/pages/admin/PremiumContent';
+import { StorageSection } from '@/components/admin/StorageSection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
