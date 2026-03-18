@@ -16,6 +16,7 @@ import { ContentWarningDialog } from '@/components/ContentWarningDialog';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useTrackView } from '@/hooks/useTrackView';
 
 const GENRE_EMOJI: Record<string, string> = {
   Action: '⚔️', Fantasy: '🔮', Adventure: '🧭', Drama: '🎲', Romance: '❤️',
