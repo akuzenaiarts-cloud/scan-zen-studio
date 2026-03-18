@@ -73,6 +73,13 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
+    // Return client ID (publishable) without needing PayPal auth
+    if (action === "get-client-id") {
+      const { clientId } = await getPayPalCredentials(supabase);
+      if (!clientId) return json({ error: "PayPal not configured" }, 400);
+      return json({ clientId });
+    }
+
     const { clientId, clientSecret, isSandbox } = await getPayPalCredentials(supabase);
     if (!clientId || !clientSecret) {
       return json({ error: "PayPal not configured. Add credentials in Admin Panel → Premium Content." }, 400);
