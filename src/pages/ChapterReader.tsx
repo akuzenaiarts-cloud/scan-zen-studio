@@ -17,6 +17,7 @@ import { usePremiumSettings } from '@/hooks/usePremiumSettings';
 import { toast as sonnerToast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { useTrackView } from '@/hooks/useTrackView';
 
 function CountdownTimer({ targetDate, onExpired }: { targetDate: string; onExpired?: () => void }) {
   const [timeLeft, setTimeLeft] = useState('');
@@ -69,6 +70,7 @@ export default function ChapterReader() {
   });
   const recordReading = useRecordReading();
   const { user } = useAuth();
+  useTrackView(manga?.id);
   const { settings: premiumSettings } = usePremiumSettings();
   const currencyName = premiumSettings.coin_system.currency_name;
   const currencyIconUrl = premiumSettings.coin_system.currency_icon_url;
