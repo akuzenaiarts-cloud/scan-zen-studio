@@ -59,7 +59,7 @@ export default function UserMenu() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 rounded-full bg-muted/60 border border-border/40 hover:bg-muted transition-all duration-200 hover:scale-[1.02] h-11 px-2 lg:px-4"
+        className="flex items-center gap-2 rounded-full bg-muted/60 border border-border/40 hover:bg-muted transition-all duration-200 hover:scale-[1.02] h-11 pl-0.5 pr-2 lg:pr-4"
       >
         <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
           {profile?.avatar_url ? (
