@@ -7,7 +7,7 @@ Project memory for MangaHub v1 manga reader platform
 - Footer text + tagline are dynamic from DB
 - Navbar site name + logo are dynamic from DB
 - Theme presets applied via ThemeContext from settings (full CSS variable override)
-- Default theme preset: Sakura
+- Default theme preset: Obsidian
 
 ## Auth
 - Supports Discord, Google, and Email login
