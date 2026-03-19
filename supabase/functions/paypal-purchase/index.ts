@@ -7,14 +7,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const USD_TO_INR: Record<string, string> = {
-  "0.99": "84",
-  "2.97": "250",
-  "6.93": "582",
-  "14.85": "1247",
-  "31.68": "2661",
-  "99.00": "8316",
-};
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

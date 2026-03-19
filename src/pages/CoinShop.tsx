@@ -141,7 +141,7 @@ export default function CoinShop() {
     setPaypalLoading(true);
     const script = document.createElement('script');
     script.id = 'paypal-sdk-script';
-    script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}&currency=INR&components=buttons`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}&currency=USD&components=buttons`;
     script.async = true;
     script.onload = () => {
       setPaypalReady(true);
