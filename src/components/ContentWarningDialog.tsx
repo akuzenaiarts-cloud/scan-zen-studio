@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AlertCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ContentWarningDialogProps {
   open: boolean;
@@ -23,6 +24,8 @@ export const ContentWarningDialog = ({
   warnings,
   mangaTitle,
 }: ContentWarningDialogProps) => {
+  const navigate = useNavigate();
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -46,7 +49,7 @@ export const ContentWarningDialog = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Go Back</AlertDialogCancel>
+          <AlertDialogCancel onClick={() => navigate('/')}>Go Back</AlertDialogCancel>
           <AlertDialogAction onClick={() => onOpenChange(false)}>I Understand, Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
