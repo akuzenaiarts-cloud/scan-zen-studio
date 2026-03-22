@@ -1,56 +1,74 @@
 
 
-# Redesign Chapter Reader Header + MENU Panel
+# Fix PayPal + Improve Series & Chapter Reader
 
-## Overview
-Complete overhaul of the ChapterReader header and settings sidebar to match MangaFire/AsuraScans reference designs. Only `src/pages/ChapterReader.tsx` changes.
+## Part 1: PayPal "Things don't appear to be working" Fix
 
-## Changes (single file: `src/pages/ChapterReader.tsx`)
+### Root Cause
 
-### 1. Header Redesign (lines 252-305)
-- Height increased to 56-64px
-- **Left**: Home icon button (dark rounded square) → manga cover thumbnail (40×52px, smaller on mobile) → two-line text (title + "Chapter N - Title")
-- **Right**: Only the MENU button — rectangular dark bg, 2×2 grid icon + bold "MENU" text
-- Remove: prev/next chapter buttons, chapter dropdown, page count, BookOpen link
+When using the PayPal JavaScript SDK (`paypal.Buttons()`), the SDK manages the `payment_source` internally. The edge function is sending `payment_source.paypal.experience_context` in the create order API call, which conflicts with the SDK's own payment source handling, causing PayPal to error with "Things don't appear to be working."
 
-### 2. MENU Panel (replace existing Sheet, lines 507-626)
-Replace the current `<Sheet>` with a custom right-side sliding panel (280-300px wide) with backdrop overlay.
+### Fix: `supabase/functions/paypal-purchase/index.ts`
 
-**Panel structure top-to-bottom:**
-- Manga title (bold) + collapse `>` arrow button
-- "you are reading" / "by chapter" with cycle icon toggle
-- Language row (globe + "English")
-- Chapter selector row: `<` arrow + dropdown + `>` arrow — dropdown expands to scrollable chapter list with search
-- Page selector row: same pattern — expands to scrollable page list
-- Action rows: Library (bookmark toggle), Manga Detail (navigate), Report Error (simple dialog)
-- Toggle rows: Header Sticky, Long Strip, Fit Height, Bottom Progress
-- "Advanced Settings" button → opens modal
-- Share section: Facebook, X, Discord, Reddit icon buttons
+In the `create-order` action, remove the `payment_source` block entirely from the order body. When using the JS SDK buttons flow, the order should only contain `intent` and `purchase_units`:
 
-### 3. Advanced Settings Modal
-Centered modal overlay with 3 tabs:
-- **PAGE LAYOUT**: Page Display Style (Single/Double/Long Strip), Strip Margin input, Reading Direction (LTR/RTL), Progress Bar Position (Top/Bottom/Left/Right/None), "Show tips" toggle
-- **IMAGE**: Contain to width/height, Stretch small pages, Limit max width/height, Greyscale, Dim pages toggles
-- **SHORTCUTS**: Keyboard shortcut reference list (H, M, N, B, →, ←)
+```json
+{
+  "intent": "CAPTURE",
+  "purchase_units": [{
+    "amount": { "currency_code": "USD", "value": "0.99" },
+    "custom_id": "userId_coins"
+  }]
+}
+```
 
-### 4. Settings Persistence
-All settings stored in localStorage under a single key (e.g. `reader-settings`). Loaded on mount, saved on each change. Settings include: reading mode, fit mode, sticky header, reading direction, strip margin, page display style, progress bar position, image sizing toggles, image coloring toggles.
+No frontend changes needed -- the SDK script loading and button rendering are already correct.
 
-### 5. Keyboard Shortcuts Update
-- `H`: Toggle header visibility
-- `M`: Toggle menu panel
-- `N`: Next chapter
-- `B`: Previous chapter
-- `←`/`→`: Page navigation (respects LTR/RTL)
-- `Esc`: Close menu panel
+---
 
-### 6. Floating Settings Button
-When sticky header is off, show a small floating gear icon button at bottom-right to open the MENU panel.
+## Part 2: Improve Series Page
 
-### Technical Notes
-- Custom panel component built inline (not using Sheet) for full control over animation and backdrop
-- Advanced Settings modal uses Dialog component from shadcn
-- All new state consolidated into a single `readerSettings` object loaded from/saved to localStorage
-- Bookmark toggle uses existing `useMangaBookmark` hook
-- No changes to image rendering, comments section, lock screen, or any other page
+Enhance `src/pages/Series.tsx` with:
+
+- **Sort dropdown**: Add a sort option (A-Z, Z-A, Latest Update, Most Views) above the results grid
+- **Result count + active filter chips**: Show active filters as dismissible chips above results
+- **Add "season end" and "cancelled" to status filters** since the data contains these statuses
+- **Empty state**: Show a styled empty state when no results match filters
+- **Collapsible genre filter**: Make genre section collapsible to save vertical space on mobile
+
+---
+
+## Part 3: Improve Chapter Reader (MangaFire-inspired)
+
+Based on the MangaFire reference, add a **settings sidebar panel** and improve the reading experience:
+
+### 3a. Reading Settings Sidebar
+
+Replace the current floating options button with a slide-out sidebar (right side) containing:
+
+- **Chapter selector**: Dropdown with prev/next arrows (like MangaFire's "Chapter 1" with arrows)
+- **Page indicator**: "Page X/Total" display
+- **Quick actions**: Bookmark, Manga Detail link, Report Error buttons
+- **Reader settings toggles**:
+  - "Header Sticky" -- toggle sticky header on/off
+  - "Long Strip" vs "Page by Page" reading mode
+  - "Fit Width" -- toggle between fit-width and original size
+  - "Left to Right" / "Right to Left" reading direction
+- **Bottom Progress Bar**: A thin progress bar at the bottom showing scroll position through the chapter
+
+### 3b. Top Navigation Bar Improvements
+
+- Add chapter info display: "Chapter X/Y" and "Page X/Z" in the header bar
+- Add a compact chapter dropdown selector in the header
+
+### 3c. Keyboard Navigation
+
+- Left/Right arrow keys for prev/next chapter
+- Escape to close sidebar
+
+### Files Changed
+
+1. `supabase/functions/paypal-purchase/index.ts` -- remove `payment_source` from create-order
+2. `src/pages/Series.tsx` -- add sorting, filter chips, collapsible genres, empty state, extra statuses
+3. `src/pages/ChapterReader.tsx` -- add settings sidebar, progress bar, keyboard nav, reading mode options
 
