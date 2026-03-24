@@ -48,7 +48,7 @@ function ChapterRow({ ch, slug, currencyIconUrl }: { ch: { id: string; number: n
     <Link
       key={ch.id}
       to={`/manga/${slug}/chapter/${ch.number}`}
-      className="flex items-center justify-between text-xs py-1.5 hover:bg-primary/10 hover:text-primary rounded-md px-2 -mx-2 transition-all duration-200 hover:translate-x-0.5"
+      className="flex items-center justify-between text-xs py-1 hover:bg-muted/30 rounded px-1 -mx-1 transition-colors"
     >
       <span className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground truncate">
         <span className="truncate">Chapter {ch.number}</span>
