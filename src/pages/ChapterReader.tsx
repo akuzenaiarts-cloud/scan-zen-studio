@@ -659,7 +659,7 @@ export default function ChapterReader() {
                 <span>{progressLabel}</span>
                 {progressIcon}
               </button>
-              <button onClick={() => { setShowAdvanced(true); setAdvancedTab('layout'); }} className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm hover:bg-secondary/60 transition-colors">
+              <button onClick={() => { setMenuOpen(false); setShowAdvanced(true); setAdvancedTab('layout'); }} className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm hover:bg-secondary/60 transition-colors">
                 <span>Advanced Settings</span>
                 <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
               </button>
@@ -796,7 +796,7 @@ export default function ChapterReader() {
 
       {/* ─── Advanced Settings Modal ─── */}
       <Dialog open={showAdvanced} onOpenChange={setShowAdvanced}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto z-[80]">
           <DialogHeader><DialogTitle>Advanced Settings</DialogTitle></DialogHeader>
           {/* Tabs */}
           <div className="flex gap-1 mb-4">
